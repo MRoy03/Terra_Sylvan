@@ -1,6 +1,9 @@
-// Server component — can legally export generateStaticParams.
-// Community IDs are unknown at build time so we return [].
-// The public/404.html SPA redirect handles direct-URL navigation on GitHub Pages.
+// Server component — exports generateStaticParams (required for static export).
+// Renders the client component which handles all Firebase data fetching.
+import { CommunityPageClient } from './CommunityPageClient'
+
 export function generateStaticParams() { return [] }
 
-export { CommunityPageClient as default } from './CommunityPageClient'
+export default function CommunityPage() {
+  return <CommunityPageClient />
+}
