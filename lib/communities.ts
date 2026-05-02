@@ -89,14 +89,16 @@ export async function sendGroupMessage(
   communityId: string,
   senderId:    string,
   content:     string,
-  type:        MessageType = 'text',
+  type:        string = 'text',
   mediaURL?:   string,
+  extra?:      Record<string, unknown>,
 ): Promise<void> {
   await addDoc(collection(db, 'communities', communityId, 'messages'), {
     senderId, content, type,
     mediaURL:  mediaURL ?? null,
     timestamp: Date.now(),
     status:    'sent',
+    ...(extra ?? {}),
   })
 }
 

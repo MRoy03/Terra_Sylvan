@@ -16,7 +16,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 
 export async function updateUserProfile(
   uid: string,
-  fields: Partial<Pick<UserProfile, 'displayName' | 'bio' | 'status' | 'treeType' | 'photoURL'>>,
+  fields: Partial<Pick<UserProfile, 'displayName' | 'bio' | 'status' | 'treeType' | 'photoURL'>> & { animal?: string },
 ): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { ...fields, updatedAt: Date.now() })
 }
@@ -59,6 +59,7 @@ export async function sendMessage(
   content:  string,
   type:     MessageType = 'text',
   mediaURL?: string,
+  extra?:   Record<string, unknown>,
 ): Promise<void> {
   const ts = Date.now()
 
@@ -69,6 +70,7 @@ export async function sendMessage(
     mediaURL: mediaURL ?? null,
     timestamp: ts,
     status: 'sent',
+    ...(extra ?? {}),
   })
 
   await updateDoc(doc(db, 'chats', chatId), {

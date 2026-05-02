@@ -2,6 +2,7 @@
 
 import { useState, useEffect, ComponentType } from 'react'
 import type { TreeStats, TreeType, BiomeType } from '@/types'
+import type { AnimalType } from './AnimalCompanion'
 
 interface TreeSceneProps {
   stats:       TreeStats
@@ -10,6 +11,7 @@ interface TreeSceneProps {
   photoURL:    string | null
   treeType:    TreeType
   biomeType?:  BiomeType
+  animal?:     AnimalType
 }
 
 export default function TreeScene(props: TreeSceneProps) {

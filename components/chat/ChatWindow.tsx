@@ -36,10 +36,10 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typers])
 
-  const handleSend = async (content: string, type: MessageType = 'text', mediaURL?: string) => {
+  const handleSend = async (content: string, type: MessageType = 'text', mediaURL?: string, extra?: Record<string, unknown>) => {
     if (!user) return
     try {
-      await sendMessage(chatId, user.uid, content, type, mediaURL)
+      await sendMessage(chatId, user.uid, content, type, mediaURL, extra)
     } catch {
       toast.error('Failed to send message')
     }

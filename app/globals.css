@@ -159,3 +159,165 @@ body {
 .story-progress-bar {
   animation: story-progress 5s linear forwards;
 }
+
+/* ── Sticker animations ─────────────────────────────────────────────────── */
+@keyframes stickerBounce {
+  0%,100% { transform: translateY(0) scale(1); }
+  40%     { transform: translateY(-14px) scale(1.18); }
+  60%     { transform: translateY(-7px) scale(1.10); }
+}
+@keyframes stickerFloat {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-7px); }
+}
+@keyframes stickerWiggle {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  20%     { transform: rotate(-18deg) scale(1.1); }
+  60%     { transform: rotate(18deg) scale(1.1); }
+  80%     { transform: rotate(-10deg) scale(1.05); }
+}
+@keyframes stickerSway {
+  0%,100% { transform: rotate(-8deg); }
+  50%     { transform: rotate(8deg); }
+}
+@keyframes stickerPulse {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.2); filter: brightness(1.3); }
+}
+@keyframes stickerHop {
+  0%,100% { transform: translateY(0) scaleY(1); }
+  30%     { transform: translateY(-18px) scaleY(0.9); }
+  50%     { transform: translateY(0) scaleY(1.1); }
+  60%     { transform: translateY(-6px) scaleY(0.95); }
+}
+@keyframes stickerFlutter {
+  0%,100% { transform: scaleX(1) translateY(0); }
+  25%     { transform: scaleX(0.7) translateY(-5px); }
+  50%     { transform: scaleX(1.1) translateY(-9px); }
+  75%     { transform: scaleX(0.7) translateY(-5px); }
+}
+@keyframes stickerGlow {
+  0%,100% { filter: brightness(1) drop-shadow(0 0 0px currentColor); }
+  50%     { filter: brightness(1.4) drop-shadow(0 0 8px rgba(255,255,150,0.8)); }
+}
+@keyframes stickerSpiral {
+  0%   { transform: rotate(0deg) translateY(0); }
+  25%  { transform: rotate(-20deg) translateY(-6px); }
+  50%  { transform: rotate(0deg) translateY(-10px); }
+  75%  { transform: rotate(20deg) translateY(-6px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+@keyframes stickerFlash {
+  0%,100% { transform: scale(1); filter: brightness(1); }
+  10%     { transform: scale(1.3); filter: brightness(2.5); }
+  20%     { transform: scale(1); filter: brightness(1); }
+  30%     { transform: scale(1.2); filter: brightness(2); }
+  40%     { transform: scale(1); filter: brightness(1); }
+}
+@keyframes stickerSpinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes stickerSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes stickerTwinkle {
+  0%,100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+  25%     { transform: scale(1.15) rotate(10deg); filter: brightness(1.6); }
+  50%     { transform: scale(0.9) rotate(-5deg); filter: brightness(0.8); }
+  75%     { transform: scale(1.2) rotate(8deg); filter: brightness(1.8); }
+}
+@keyframes stickerHowl {
+  0%,100% { transform: translateY(0) rotate(0); }
+  30%     { transform: translateY(-5px) rotate(-5deg); }
+  60%     { transform: translateY(-10px) rotate(5deg); }
+}
+@keyframes stickerPop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.25); opacity: 1; }
+  80%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+@keyframes stickerShake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-6px) rotate(-5deg); }
+  40%     { transform: translateX(6px) rotate(5deg); }
+  60%     { transform: translateX(-4px) rotate(-3deg); }
+  80%     { transform: translateX(4px) rotate(3deg); }
+}
+
+.sticker-bounce   { animation: stickerBounce 1.2s ease-in-out infinite; display: inline-block; }
+.sticker-float    { animation: stickerFloat  2.5s ease-in-out infinite; display: inline-block; }
+.sticker-wiggle   { animation: stickerWiggle 1.0s ease-in-out infinite; display: inline-block; }
+.sticker-sway     { animation: stickerSway   2.0s ease-in-out infinite; display: inline-block; }
+.sticker-pulse    { animation: stickerPulse  1.5s ease-in-out infinite; display: inline-block; }
+.sticker-hop      { animation: stickerHop    0.9s ease-in-out infinite; display: inline-block; }
+.sticker-flutter  { animation: stickerFlutter 0.7s ease-in-out infinite; display: inline-block; }
+.sticker-glow     { animation: stickerGlow   2.0s ease-in-out infinite; display: inline-block; }
+.sticker-spiral   { animation: stickerSpiral 3.0s ease-in-out infinite; display: inline-block; }
+.sticker-flash    { animation: stickerFlash  1.5s ease-in-out infinite; display: inline-block; }
+.sticker-spin-slow{ animation: stickerSpinSlow 4.0s linear infinite;    display: inline-block; }
+.sticker-spin     { animation: stickerSpin   1.2s linear infinite;       display: inline-block; }
+.sticker-twinkle  { animation: stickerTwinkle 1.8s ease-in-out infinite; display: inline-block; }
+.sticker-howl     { animation: stickerHowl   2.5s ease-in-out infinite;  display: inline-block; }
+.sticker-pop      { animation: stickerPop    0.5s cubic-bezier(.36,.07,.19,.97) both; display: inline-block; }
+.sticker-shake    { animation: stickerShake  0.8s ease-in-out infinite;  display: inline-block; }
+
+/* ── Leaf message entrance ──────────────────────────────────────────────── */
+@keyframes leafMessageEnter {
+  0%   { transform: translateX(40px) rotate(15deg); opacity: 0; }
+  60%  { transform: translateX(-4px) rotate(-2deg); opacity: 1; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+.leaf-message-enter {
+  animation: leafMessageEnter 0.6s cubic-bezier(.25,.46,.45,.94) both;
+}
+
+/* ── Bioluminescence mode ────────────────────────────────────────────────── */
+.bioluminescent .glass {
+  background:   rgba(0, 255, 100, 0.07) !important;
+  border-color: rgba(0, 255, 100, 0.20) !important;
+  box-shadow:   0 0 20px rgba(0, 255, 100, 0.08), inset 0 0 10px rgba(0, 255, 100, 0.04) !important;
+}
+.bioluminescent .nav-glass {
+  background:   rgba(0, 20, 5, 0.70) !important;
+  border-color: rgba(0, 255, 100, 0.15) !important;
+  box-shadow:   0 2px 30px rgba(0, 255, 100, 0.12) !important;
+}
+.bioluminescent .bottom-dock {
+  background:   rgba(0, 30, 10, 0.80) !important;
+  border-color: rgba(0, 255, 100, 0.20) !important;
+  box-shadow:   0 0 25px rgba(0, 255, 100, 0.15) !important;
+}
+.bioluminescent .tree-badge {
+  background:   rgba(0, 255, 100, 0.12) !important;
+  border-color: rgba(0, 255, 100, 0.25) !important;
+  color:        #4afe80 !important;
+  text-shadow:  0 0 8px rgba(0, 255, 100, 0.6);
+}
+.bioluminescent .stat-pill {
+  background:   rgba(0, 255, 100, 0.08) !important;
+  border-color: rgba(0, 255, 100, 0.18) !important;
+  box-shadow:   0 0 10px rgba(0, 255, 100, 0.08);
+}
+.bioluminescent .hud-card {
+  background:   rgba(0, 20, 8, 0.75) !important;
+  border-color: rgba(0, 255, 100, 0.20) !important;
+  box-shadow:   0 0 18px rgba(0, 255, 100, 0.10) !important;
+}
+
+/* ── Season themes ───────────────────────────────────────────────────────── */
+.season-spring .bottom-dock { border-color: rgba(244,114,182,0.25) !important; }
+.season-spring .nav-glass   { border-color: rgba(244,114,182,0.15) !important; }
+
+.season-summer .bottom-dock { border-color: rgba(250,204,21,0.20) !important; }
+.season-summer .stat-pill   { border-color: rgba(250,204,21,0.15) !important; }
+
+.season-autumn .bottom-dock { border-color: rgba(234,88,12,0.25) !important; }
+.season-autumn .nav-glass   { border-color: rgba(234,88,12,0.15) !important; }
+.season-autumn .tree-badge  { border-color: rgba(234,88,12,0.30) !important; }
+
+.season-winter .bottom-dock { border-color: rgba(147,197,253,0.20) !important; }
+.season-winter .stat-pill   { border-color: rgba(147,197,253,0.15) !important; }
+.season-winter .tree-badge  { border-color: rgba(147,197,253,0.25) !important; }

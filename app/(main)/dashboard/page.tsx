@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { LogOut, Settings, ChevronDown, ChevronUp, Thermometer } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
@@ -15,6 +15,9 @@ import { TREE_BIOME_MAP } from '@/types'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
 import { Button } from '@/components/ui/Button'
 import { StoriesBar } from '@/components/social/StoriesBar'
+import { ForestRadio } from '@/components/audio/ForestRadio'
+import { BadgeDisplay } from '@/components/profile/BadgeDisplay'
+import { computeBadges } from '@/lib/badges'
 
 const TreeScene = dynamic(() => import('@/components/3d/TreeScene'), {
   ssr: false,
@@ -54,9 +57,10 @@ export default function DashboardPage() {
   const { user, profile, logOut } = useAuth()
   const router      = useRouter()
   const unreadCount = useUnreadCount()
-  const [statsOpen, setStatsOpen] = useState(false)
-  const [signingOut, setSigningOut] = useState(false)
-  const [showStories, setShowStories] = useState(false)
+  const [statsOpen,    setStatsOpen]    = useState(false)
+  const [signingOut,   setSigningOut]   = useState(false)
+  const [showStories,  setShowStories]  = useState(false)
+  const [bioMode,      setBioMode]      = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -80,6 +84,7 @@ export default function DashboardPage() {
   const stats  = computeTreeStats(profile)
   const badge  = getStageBadge(stats.stage)
   const season = getCurrentSeason()
+  const badges = computeBadges(profile)
 
   const now    = new Date()
   const hour   = now.getHours()
@@ -101,7 +106,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="scene-wrapper">
+    <div className={`scene-wrapper${bioMode ? ' bioluminescent' : ''} season-${season}`}>
       {/* ── Full-screen 3D scene ── */}
       <TreeScene
         stats={stats}
@@ -110,6 +115,7 @@ export default function DashboardPage() {
         photoURL={profile.photoURL}
         treeType={profile.treeType}
         biomeType={TREE_BIOME_MAP[profile.treeType]}
+        animal={(profile as any).animal ?? 'none'}
       />
 
       {/* ── Top navigation bar ── */}
@@ -127,6 +133,13 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setBioMode(v => !v)}
+            title="Bioluminescence mode"
+            className={`p-1.5 rounded-lg text-xs transition-colors ${bioMode ? 'text-green-300 bg-green-900/40' : 'text-forest-600 hover:text-forest-300'}`}
+          >
+            <Sparkles size={16} className={bioMode ? 'text-green-300' : ''} />
+          </button>
           <Link href="/settings">
             <Button variant="ghost" size="sm" title="Settings">
               <Settings size={17} />
@@ -153,11 +166,24 @@ export default function DashboardPage() {
           <span className="stat-pill" title="Connections → Roots">
             🌿 <span className="tabular-nums">{profile.connectionCount}</span>
           </span>
+          {(profile as any).seeds > 0 && (
+            <span className="stat-pill" title="Seeds collected">
+              🌱 <span className="tabular-nums">{(profile as any).seeds}</span>
+            </span>
+          )}
         </div>
         <span className="stat-pill self-start text-xs" title="Tree age">
           🕰 {stats.ageInDays === 0 ? 'Just sprouted!' : `${stats.ageInDays}d old`}
         </span>
+        {badges.length > 0 && (
+          <div className="pointer-events-auto">
+            <BadgeDisplay badgeIds={badges} compact maxShow={5} />
+          </div>
+        )}
       </div>
+
+      {/* ── Forest Radio ── */}
+      <ForestRadio />
 
       {/* ── Stories strip — slides down from nav ── */}
       <div className={`absolute left-0 right-0 z-40 transition-all duration-300 ${showStories ? 'top-[56px]' : '-top-24'}`}>

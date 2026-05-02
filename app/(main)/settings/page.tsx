@@ -12,6 +12,15 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { TreeType, BiomeType, TREE_CONFIGS, BIOME_CONFIGS } from '@/types'
+import { AnimalType } from '@/components/3d/AnimalCompanion'
+
+const ANIMAL_OPTIONS: { type: AnimalType; emoji: string; label: string }[] = [
+  { type: 'none',   emoji: '🚫', label: 'None'   },
+  { type: 'fox',    emoji: '🦊', label: 'Fox'    },
+  { type: 'owl',    emoji: '🦉', label: 'Owl'    },
+  { type: 'deer',   emoji: '🦌', label: 'Deer'   },
+  { type: 'rabbit', emoji: '🐇', label: 'Rabbit' },
+]
 
 const BIOME_TREE_GROUPS: { biome: BiomeType; trees: TreeType[] }[] = [
   { biome: 'temperate',     trees: ['oak','maple','cherry','willow','birch','beech','elm','linden'] },
@@ -31,6 +40,7 @@ export default function SettingsPage() {
   const [bio,          setBio]          = useState(profile?.bio ?? '')
   const [status,       setStatus]       = useState(profile?.status ?? '')
   const [treeType,     setTreeType]     = useState<TreeType>(profile?.treeType ?? 'oak')
+  const [animal,       setAnimal]       = useState<AnimalType>(((profile as any)?.animal as AnimalType) ?? 'none')
   const [photoURL,     setPhotoURL]     = useState(profile?.photoURL ?? null)
   const [saving,       setSaving]       = useState(false)
   const [uploading,    setUploading]    = useState(false)
@@ -86,6 +96,7 @@ export default function SettingsPage() {
         status:      status.trim(),
         treeType,
         photoURL,
+        animal,
       })
       await refreshProfile()
       toast.success('Profile updated! 🌿')
@@ -218,6 +229,30 @@ export default function SettingsPage() {
             })}
           </div>
           <p className="text-xs text-forest-500 text-center italic">{TREE_CONFIGS[treeType]?.description}</p>
+        </div>
+
+        {/* Animal companion */}
+        <div className="flex flex-col gap-3">
+          <label className="text-sm font-medium text-forest-300">Animal Companion</label>
+          <div className="grid grid-cols-5 gap-2">
+            {ANIMAL_OPTIONS.map(opt => (
+              <button
+                key={opt.type}
+                type="button"
+                onClick={() => setAnimal(opt.type)}
+                className={clsx(
+                  'flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all',
+                  animal === opt.type
+                    ? 'border-forest-400 bg-forest-800/60 scale-105'
+                    : 'border-forest-800/40 bg-forest-950/40 hover:border-forest-700',
+                )}
+              >
+                <span className="text-2xl">{opt.emoji}</span>
+                <span className="text-[9px] text-forest-400 font-medium">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-forest-600 text-center italic">Your companion appears beside your tree in the 3D scene.</p>
         </div>
 
         <Button size="lg" fullWidth onClick={handleSave} loading={saving}>

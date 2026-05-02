@@ -6,6 +6,7 @@ import { OrbitControls, PerspectiveCamera, Loader } from '@react-three/drei'
 import { Tree } from './Tree'
 import { DynamicSky } from './DynamicSky'
 import { Ground } from './Ground'
+import { AnimalCompanion, AnimalType } from './AnimalCompanion'
 import { TreeStats, TreeType, BiomeType, TREE_BIOME_MAP } from '@/types'
 import { useWeather, WEATHER_ICON, WeatherCondition } from '@/lib/weather'
 import { getCurrentSeason, SEASON_LABEL } from '@/lib/seasons'
@@ -17,6 +18,7 @@ interface TreeSceneProps {
   photoURL:    string | null
   treeType:    TreeType
   biomeType?:  BiomeType
+  animal?:     AnimalType
 }
 
 // ─── Weather HUD ──────────────────────────────────────────────────────────────
@@ -122,7 +124,7 @@ function WeatherHUD({ treeType }: { treeType: TreeType }) {
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
-export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType }: TreeSceneProps) {
+export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal }: TreeSceneProps) {
   const biome = biomeType ?? TREE_BIOME_MAP[treeType] ?? 'temperate'
   const { condition } = useWeather()
   const camDistance   = 4 + stats.scale * 4
@@ -134,6 +136,7 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
           <DynamicSky weatherCondition={condition} biomeType={biome} />
           <Ground biomeType={biome} />
           <Tree stats={stats} displayName={displayName} status={status} photoURL={photoURL} treeType={treeType} />
+          {animal && animal !== 'none' && <AnimalCompanion type={animal} scale={stats.scale} />}
 
           <PerspectiveCamera makeDefault
             position={[camDistance * 0.7, stats.scale * 2.5, camDistance]}
