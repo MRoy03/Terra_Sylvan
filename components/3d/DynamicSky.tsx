@@ -86,7 +86,7 @@ function Moon({ position }: { position: [number, number, number] }) {
         <circleGeometry args={[moonR, 32]} />
         <meshBasicMaterial color="#e8e2d4" transparent opacity={opacity} depthWrite={false} />
       </mesh>
-      {/* Crater texture suggestion — subtle darker circles */}
+      {/* Crater texture suggestion */}
       {opacity > 0.3 && (
         <>
           <mesh position={[-1.2, 0.8, 0.01]}>
@@ -117,152 +117,256 @@ function Moon({ position }: { position: [number, number, number] }) {
   )
 }
 
-// ─── Stylized illustrated cloud ───────────────────────────────────────────────
-function StylizedCloud({ position, scale, opacity, isNight, speed = 1 }: {
-  position: [number, number, number]
-  scale:    number
-  opacity:  number
-  isNight:  boolean
-  speed?:   number
-}) {
-  const ref = useRef<THREE.Group>(null!)
+// ─── Background Clouds (painted into sky at z=-130) ───────────────────────────
+function BackgroundClouds({ condition, isNight }: { condition: WeatherCondition; isNight: boolean }) {
+  const count = condition === 'clear' ? 0 : condition === 'partly_cloudy' ? 7 : 14
 
-  // Fixed puff layout for illustrated look
-  const puffs = useMemo(() => [
-    { x: 0,            y: scale * 0.2,  r: scale * 1.25 },
-    { x:  scale * 1.6, y: scale * 0.05, r: scale * 1.05 },
-    { x: -scale * 1.4, y: 0,            r: scale * 0.95 },
-    { x:  scale * 0.7, y: scale * 0.85, r: scale * 0.80 },
-    { x: -scale * 0.6, y: scale * 0.75, r: scale * 0.70 },
-    { x:  scale * 2.4, y: scale * 0.55, r: scale * 0.60 },
-    { x: -scale * 2.2, y: scale * 0.45, r: scale * 0.55 },
-  ], [scale])
+  const clouds = useMemo(() => Array.from({ length: count }, (_, i) => ({
+    x: (i / Math.max(count, 1) - 0.5) * 300 + (Math.random() - 0.5) * 40,
+    y: 30 + Math.random() * 28,
+    scale: 8 + Math.random() * 14,
+    opacity: 0.55 + Math.random() * 0.3,
+  })), [count])
 
-  const topCol    = isNight ? '#4a526a' : '#f0f6ff'
-  const shadowCol = isNight ? '#1e2438' : '#c8d8f0'
-
-  useFrame((_, delta) => {
-    if (!ref.current) return
-    ref.current.position.x += delta * 0.28 * speed
-    if (ref.current.position.x > 100) ref.current.position.x = -100
-  })
+  if (count === 0) return null
+  const topCol    = isNight ? '#3a4460' : '#e8f0ff'
+  const shadowCol = isNight ? '#1a2035' : '#b8c8e0'
 
   return (
-    <group ref={ref} position={position}>
-      {/* Shadow layer (slightly below, darker) */}
-      {puffs.map((p, i) => (
-        <mesh key={`s${i}`} position={[p.x * 0.98, p.y - scale * 0.28, -0.08]}>
-          <circleGeometry args={[p.r * 0.92, 14]} />
-          <meshBasicMaterial color={shadowCol} transparent opacity={opacity * 0.42} depthWrite={false} />
-        </mesh>
-      ))}
-      {/* Main body */}
-      {puffs.map((p, i) => (
-        <mesh key={`t${i}`} position={[p.x, p.y, 0]}>
-          <circleGeometry args={[p.r, 14]} />
-          <meshBasicMaterial color={topCol} transparent opacity={opacity} depthWrite={false} />
-        </mesh>
-      ))}
-      {/* Highlight top — white sheen */}
-      <mesh position={[0, scale * 0.55, 0.01]}>
-        <circleGeometry args={[scale * 0.6, 12]} />
-        <meshBasicMaterial color={isNight ? '#6070a0' : '#ffffff'} transparent opacity={opacity * 0.35} depthWrite={false} />
+    <group position={[0, 0, -130]}>
+      {clouds.map((c, ci) => {
+        const puffs = [
+          { dx: 0,             dy: c.scale * 0.2,  r: c.scale * 1.3 },
+          { dx: c.scale * 1.7, dy: 0,              r: c.scale * 1.0 },
+          { dx: -c.scale * 1.5, dy: 0,             r: c.scale * 0.9 },
+          { dx: c.scale * 0.8, dy: c.scale * 0.9,  r: c.scale * 0.7 },
+          { dx: -c.scale * 0.7, dy: c.scale * 0.8, r: c.scale * 0.6 },
+        ]
+        return (
+          <group key={ci} position={[c.x, c.y, 0]}>
+            {puffs.map((p, pi) => (
+              <mesh key={`s${pi}`} position={[p.dx, p.dy - c.scale * 0.25, -0.1]}>
+                <circleGeometry args={[p.r * 0.9, 12]} />
+                <meshBasicMaterial color={shadowCol} transparent opacity={c.opacity * 0.35} depthWrite={false} />
+              </mesh>
+            ))}
+            {puffs.map((p, pi) => (
+              <mesh key={`t${pi}`} position={[p.dx, p.dy, 0]}>
+                <circleGeometry args={[p.r, 14]} />
+                <meshBasicMaterial color={topCol} transparent opacity={c.opacity} depthWrite={false} />
+              </mesh>
+            ))}
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+// ─── Smooth mountain ridge geometry helper ────────────────────────────────────
+function useMountainGeo(ridgePoints: [number, number][], baseY = -15, width = 380) {
+  return useMemo(() => {
+    const sorted = [...ridgePoints].sort((a, b) => a[0] - b[0])
+    const shape  = new THREE.Shape()
+    shape.moveTo(-width / 2, baseY)
+    shape.lineTo(sorted[0][0], sorted[0][1])
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const p0  = i > 0 ? sorted[i - 1] : sorted[i]
+      const p1  = sorted[i]
+      const p2  = sorted[i + 1]
+      const p3  = i < sorted.length - 2 ? sorted[i + 2] : p2
+      const cp1x = p1[0] + (p2[0] - p0[0]) / 5
+      const cp1y = p1[1] + (p2[1] - p0[1]) / 5
+      const cp2x = p2[0] - (p3[0] - p1[0]) / 5
+      const cp2y = p2[1] - (p3[1] - p1[1]) / 5
+      shape.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2[0], p2[1])
+    }
+    shape.lineTo(width / 2, baseY)
+    shape.lineTo(width / 2, baseY - 60)
+    shape.lineTo(-width / 2, baseY - 60)
+    return new THREE.ShapeGeometry(shape, 40)
+  }, [ridgePoints, baseY, width])
+}
+
+// ─── Per-biome ridge layer data ───────────────────────────────────────────────
+type RidgeLayer = {
+  z: number
+  y: number
+  color: string
+  points: [number, number][]
+  hazeColor?: string
+}
+
+const BIOME_LAYERS: Record<BiomeType, RidgeLayer[]> = {
+  temperate: [
+    {
+      z: -160, y: 2, color: '#0a1a0c', hazeColor: '#1a2a1a',
+      points: [[-180,0],[-120,42],[-70,55],[-20,38],[30,60],[80,45],[140,52],[180,38]],
+    },
+    {
+      z: -110, y: 0, color: '#0e2410', hazeColor: '#182818',
+      points: [[-180,0],[-130,30],[-75,42],[-25,28],[20,45],[75,32],[135,38],[180,25]],
+    },
+    {
+      z: -65, y: -1, color: '#122c14', hazeColor: '#1e3020',
+      points: [[-180,0],[-120,18],[-65,28],[-15,16],[25,32],[80,20],[130,24],[180,14]],
+    },
+    {
+      z: -30, y: -2, color: '#162e16',
+      points: [[-180,0],[-110,10],[-55,16],[-10,8],[30,18],[85,12],[140,14],[180,8]],
+    },
+  ],
+  mountain: [
+    {
+      z: -160, y: 4, color: '#0a0f18', hazeColor: '#10182a',
+      points: [[-180,0],[-110,60],[-70,82],[-30,55],[15,72],[60,88],[110,65],[160,70],[180,50]],
+    },
+    {
+      z: -110, y: 2, color: '#141e30', hazeColor: '#182234',
+      points: [[-180,0],[-115,40],[-75,58],[-35,35],[10,50],[65,62],[115,45],[165,48],[180,32]],
+    },
+    {
+      z: -65, y: 0, color: '#1a2838', hazeColor: '#1e2c3c',
+      points: [[-180,0],[-120,22],[-80,35],[-40,18],[5,28],[70,38],[120,26],[165,28],[180,18]],
+    },
+    {
+      z: -30, y: -1, color: '#0e1a14',
+      points: [[-180,0],[-110,10],[-60,16],[-20,8],[30,20],[90,13],[145,16],[180,8]],
+    },
+  ],
+  tropical: [
+    {
+      z: -160, y: 2, color: '#040e06', hazeColor: '#0a180a',
+      points: [[-180,0],[-120,50],[-65,65],[-15,42],[30,58],[85,50],[140,60],[180,45]],
+    },
+    {
+      z: -110, y: 0, color: '#081408', hazeColor: '#101c10',
+      points: [[-180,0],[-125,35],[-70,48],[-18,28],[25,42],[80,36],[138,44],[180,30]],
+    },
+    {
+      z: -65, y: -1, color: '#0c1e0c', hazeColor: '#162416',
+      points: [[-180,0],[-115,20],[-60,30],[-10,16],[28,28],[85,22],[140,26],[180,16]],
+    },
+    {
+      z: -30, y: -2, color: '#102414',
+      points: [[-180,0],[-108,10],[-50,16],[-5,8],[32,16],[88,12],[145,14],[180,8]],
+    },
+  ],
+  arid: [
+    {
+      z: -160, y: 2, color: '#150a05', hazeColor: '#201208',
+      points: [[-180,0],[-140,30],[-120,30],[-100,0],[-50,38],[-20,38],[10,0],[50,28],[80,28],[120,0],[155,22],[180,22]],
+    },
+    {
+      z: -110, y: 0, color: '#1e1008', hazeColor: '#28180c',
+      points: [[-180,0],[-145,20],[-125,20],[-105,0],[-55,26],[-25,26],[5,0],[45,18],[85,18],[125,0],[160,15],[180,15]],
+    },
+    {
+      z: -65, y: -1, color: '#28180c', hazeColor: '#301e10',
+      points: [[-180,0],[-120,10],[-60,14],[-10,8],[30,12],[85,9],[140,11],[180,6]],
+    },
+    {
+      z: -30, y: -2, color: '#1e1208',
+      points: [[-180,0],[-110,5],[-55,8],[-8,4],[32,6],[88,5],[145,7],[180,4]],
+    },
+  ],
+  mediterranean: [
+    {
+      z: -160, y: 1, color: '#100e08', hazeColor: '#1a1810',
+      points: [[-180,0],[-115,38],[-65,48],[-15,30],[25,42],[80,36],[140,44],[180,28]],
+    },
+    {
+      z: -110, y: 0, color: '#1a1810', hazeColor: '#221e14',
+      points: [[-180,0],[-120,25],[-68,32],[-18,18],[20,28],[78,24],[138,28],[180,16]],
+    },
+    {
+      z: -65, y: -1, color: '#221e14', hazeColor: '#282418',
+      points: [[-180,0],[-115,12],[-60,16],[-12,8],[25,14],[82,10],[140,12],[180,7]],
+    },
+    {
+      z: -30, y: -2, color: '#1c1a10',
+      points: [[-180,0],[-108,6],[-52,8],[-8,4],[30,6],[88,5],[145,6],[180,3]],
+    },
+  ],
+  tundra: [
+    {
+      z: -160, y: 1, color: '#0c1018', hazeColor: '#141820',
+      points: [[-180,0],[-120,18],[-65,22],[-15,14],[25,20],[80,16],[140,18],[180,12]],
+    },
+    {
+      z: -110, y: 0, color: '#141824', hazeColor: '#1c2030',
+      points: [[-180,0],[-120,10],[-65,13],[-15,8],[25,11],[80,9],[140,11],[180,7]],
+    },
+    {
+      z: -65, y: -1, color: '#1c2030', hazeColor: '#202438',
+      points: [[-180,0],[-115,5],[-58,7],[-10,4],[28,6],[85,4],[142,6],[180,3]],
+    },
+    {
+      z: -30, y: -2, color: '#202838',
+      points: [[-180,0],[-110,3],[-55,4],[-8,2],[30,3],[88,2],[145,3],[180,2]],
+    },
+  ],
+  mangrove: [
+    {
+      z: -160, y: 1, color: '#040a10', hazeColor: '#0c1418',
+      points: [[-180,0],[-120,30],[-65,38],[-15,24],[25,34],[80,28],[140,32],[180,22]],
+    },
+    {
+      z: -110, y: 0, color: '#081418', hazeColor: '#101e20',
+      points: [[-180,0],[-120,18],[-65,24],[-15,14],[25,20],[80,16],[140,20],[180,12]],
+    },
+    {
+      z: -65, y: -1, color: '#0c1e1e', hazeColor: '#142828',
+      points: [[-180,0],[-115,8],[-58,12],[-10,6],[28,10],[85,7],[142,9],[180,5]],
+    },
+    {
+      z: -30, y: -2, color: '#102828',
+      points: [[-180,0],[-110,4],[-55,6],[-8,3],[30,5],[88,3],[145,5],[180,3]],
+    },
+  ],
+}
+
+// ─── Individual ridge layer rendered as ShapeGeometry ─────────────────────────
+function RidgeLayer({ layer }: { layer: RidgeLayer }) {
+  const geo = useMountainGeo(layer.points, -15, 380)
+  return (
+    <group position={[0, layer.y, layer.z]}>
+      <mesh geometry={geo}>
+        <meshBasicMaterial color={layer.color} side={THREE.DoubleSide} depthWrite={true} />
+      </mesh>
+      {/* Ground fill — no gap at base */}
+      <mesh position={[0, -15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[600, 80]} />
+        <meshBasicMaterial color={layer.color} depthWrite={true} />
       </mesh>
     </group>
   )
 }
 
-function Clouds({ condition, isNight }: { condition: WeatherCondition; isNight: boolean }) {
-  const density = condition === 'clear' ? 0
-    : condition === 'partly_cloudy' ? 4
-    : condition === 'cloudy' || condition === 'fog' ? 11
-    : 8
-  const opacity = condition === 'fog' ? 0.90
-    : condition === 'partly_cloudy' ? 0.78
-    : 0.86
-
-  const clouds = useMemo(() => Array.from({ length: Math.max(density, 0) }, (_, i) => ({
-    x:     (i / Math.max(density, 1) - 0.5) * 180 + (Math.random() - 0.5) * 25,
-    y:     20 + Math.random() * 20,
-    z:     -25 + (Math.random() - 0.5) * 45,
-    scale: 3.5 + Math.random() * 5.5,
-    speed: 0.6 + Math.random() * 0.8,
-  })), [density])
-
-  if (density === 0) return null
-  return (
-    <>
-      {clouds.map((c, i) => (
-        <StylizedCloud key={i}
-          position={[c.x, c.y, c.z]}
-          scale={c.scale} opacity={opacity}
-          isNight={isNight} speed={c.speed}
-        />
-      ))}
-    </>
-  )
-}
-
-// ─── Background silhouette scenery (2D illustrated style) ─────────────────────
-const BIOME_SCENERY: Record<BiomeType, { layers: { color: string; peaks: { x: number; h: number; w: number }[] }[] }> = {
-  temperate: { layers: [
-    { color: '#0e1e10', peaks: [{ x:-100, h:55, w:50 },{ x:-30, h:68, w:55 },{ x:35, h:52, w:45 },{ x:100, h:62, w:52 },{ x:-160, h:40, w:38 },{ x:160, h:44, w:40 }] },
-    { color: '#162814', peaks: [{ x:-65, h:38, w:38 },{ x:5, h:48, w:42 },{ x:70, h:34, w:32 },{ x:-130, h:28, w:30 },{ x:130, h:36, w:34 }] },
-    { color: '#1a3a1c', peaks: [{ x:-40, h:22, w:30 },{ x:15, h:28, w:34 },{ x:65, h:20, w:26 },{ x:-90, h:16, w:24 },{ x:95, h:24, w:28 }] },
-  ]},
-  mountain: { layers: [
-    { color: '#0c1420', peaks: [{ x:-90, h:72, w:55 },{ x:-20, h:88, w:65 },{ x:45, h:65, w:52 },{ x:110, h:78, w:60 },{ x:-160, h:50, w:44 }] },
-    { color: '#1a2535', peaks: [{ x:-60, h:48, w:42 },{ x:15, h:58, w:48 },{ x:75, h:42, w:38 },{ x:-120, h:35, w:34 },{ x:135, h:44, w:38 }] },
-    { color: '#2a3a48', peaks: [{ x:-40, h:28, w:32 },{ x:20, h:35, w:36 },{ x:70, h:24, w:28 },{ x:-85, h:20, w:26 },{ x:100, h:28, w:30 }] },
-  ]},
-  tropical: { layers: [
-    { color: '#071508', peaks: [{ x:-95, h:60, w:58 },{ x:-15, h:75, w:62 },{ x:40, h:55, w:50 },{ x:105, h:68, w:56 },{ x:-155, h:45, w:42 }] },
-    { color: '#0e2810', peaks: [{ x:-60, h:42, w:42 },{ x:10, h:52, w:46 },{ x:68, h:36, w:34 },{ x:-120, h:30, w:30 },{ x:128, h:38, w:36 }] },
-    { color: '#143c16', peaks: [{ x:-38, h:26, w:32 },{ x:18, h:32, w:36 },{ x:62, h:22, w:28 },{ x:-88, h:18, w:24 },{ x:92, h:26, w:28 }] },
-  ]},
-  arid: { layers: [
-    { color: '#1a100a', peaks: [{ x:-80, h:38, w:65 },{ x:10, h:50, w:75 },{ x:85, h:32, w:58 },{ x:-150, h:28, w:50 },{ x:155, h:34, w:55 }] },
-    { color: '#2a1a0e', peaks: [{ x:-55, h:25, w:50 },{ x:20, h:32, w:60 },{ x:72, h:22, w:45 },{ x:-110, h:18, w:38 },{ x:118, h:24, w:44 }] },
-    { color: '#3c2a18', peaks: [{ x:-38, h:15, w:38 },{ x:15, h:20, w:42 },{ x:60, h:14, w:32 },{ x:-80, h:12, w:28 },{ x:85, h:16, w:32 }] },
-  ]},
-  mediterranean: { layers: [
-    { color: '#12100e', peaks: [{ x:-85, h:45, w:60 },{ x:5, h:58, w:68 },{ x:80, h:40, w:54 },{ x:-145, h:32, w:46 },{ x:148, h:38, w:50 }] },
-    { color: '#1e1c18', peaks: [{ x:-58, h:30, w:45 },{ x:18, h:38, w:50 },{ x:70, h:26, w:40 },{ x:-112, h:22, w:36 },{ x:120, h:28, w:38 }] },
-    { color: '#2e2820', peaks: [{ x:-40, h:18, w:34 },{ x:16, h:24, w:38 },{ x:64, h:16, w:30 },{ x:-84, h:14, w:26 },{ x:88, h:18, w:28 }] },
-  ]},
-  mangrove: { layers: [
-    { color: '#050e10', peaks: [{ x:-88, h:42, w:55 },{ x:5, h:52, w:60 },{ x:82, h:36, w:50 },{ x:-148, h:30, w:44 },{ x:150, h:38, w:46 }] },
-    { color: '#0a1a1e', peaks: [{ x:-58, h:28, w:40 },{ x:15, h:36, w:45 },{ x:68, h:24, w:36 },{ x:-112, h:20, w:32 },{ x:118, h:26, w:34 }] },
-    { color: '#0e2828', peaks: [{ x:-38, h:16, w:30 },{ x:14, h:22, w:34 },{ x:60, h:14, w:26 },{ x:-82, h:12, w:22 },{ x:84, h:16, w:26 }] },
-  ]},
-  tundra: { layers: [
-    { color: '#0c1218', peaks: [{ x:-90, h:35, w:62 },{ x:5, h:44, w:70 },{ x:85, h:30, w:55 },{ x:-148, h:25, w:48 },{ x:152, h:32, w:52 }] },
-    { color: '#161e28', peaks: [{ x:-60, h:22, w:48 },{ x:18, h:28, w:54 },{ x:72, h:18, w:40 },{ x:-114, h:15, w:36 },{ x:120, h:20, w:38 }] },
-    { color: '#202c38', peaks: [{ x:-40, h:12, w:36 },{ x:16, h:16, w:40 },{ x:62, h:10, w:28 },{ x:-84, h:8,  w:26 },{ x:86, h:12, w:30 }] },
-  ]},
-}
-
-const LAYER_Z  = [-150, -100, -58]
-const LAYER_Y  = [-10,  -6,   -3]
-
+// ─── Background scenery — smooth bezier silhouettes per biome ─────────────────
 function BackgroundScenery({ biomeType = 'temperate' }: { biomeType: BiomeType }) {
-  const scenery = BIOME_SCENERY[biomeType] ?? BIOME_SCENERY.temperate
+  const layers = BIOME_LAYERS[biomeType] ?? BIOME_LAYERS.temperate
 
   return (
     <group>
-      {scenery.layers.map((layer, li) => (
-        <group key={li} position={[0, LAYER_Y[li], LAYER_Z[li]]}>
-          {layer.peaks.map((peak, pi) => (
-            <mesh key={pi} position={[peak.x, peak.h / 2, 0]}>
-              <coneGeometry args={[peak.w, peak.h, 5]} />
-              <meshBasicMaterial color={layer.color} />
+      {layers.map((layer, li) => (
+        <group key={li}>
+          <RidgeLayer layer={layer} />
+          {/* Atmospheric haze plane between layers (skip the last/nearest) */}
+          {layer.hazeColor && li < layers.length - 1 && (
+            <mesh
+              position={[0, layer.y + 5, layer.z + 10]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={[600, 80]} />
+              <meshBasicMaterial
+                color={layer.hazeColor}
+                transparent
+                opacity={0.12}
+                depthWrite={false}
+              />
             </mesh>
-          ))}
-          {/* Ground fill so no gap at base of mountains */}
-          <mesh position={[0, -3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[600, 30]} />
-            <meshBasicMaterial color={layer.color} />
-          </mesh>
+          )}
         </group>
       ))}
     </group>
@@ -448,8 +552,11 @@ export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate'
         />
       )}
 
-      {/* Layered 2D illustrated background scenery */}
+      {/* Layered 2D illustrated background scenery — smooth bezier ridges */}
       <BackgroundScenery biomeType={biomeType} />
+
+      {/* Background clouds painted into the sky panorama */}
+      <BackgroundClouds condition={weatherCondition} isNight={isNight} />
 
       {/* Celestial bodies */}
       {!isNight && !isRainy && <CelestialSun position={sunPos} phase={cfg.phase} />}
@@ -465,9 +572,6 @@ export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate'
           <Constellation data={URSA_MAJOR} offset={[26,  36, 0]} />
         </group>
       )}
-
-      {/* Stylized illustrated clouds */}
-      <Clouds condition={weatherCondition} isNight={isNight} />
 
       {isRainy && <Rain heavy={weatherCondition === 'heavy_rain' || weatherCondition === 'storm'} />}
       {isSnowy && <Snow heavy={weatherCondition === 'heavy_snow'} />}

@@ -1,6 +1,6 @@
 import {
   doc, getDoc, setDoc, updateDoc, addDoc,
-  collection, query, where, getDocs,
+  collection, collectionGroup, query, where, getDocs,
   increment, onSnapshot, orderBy, limit,
   QuerySnapshot, DocumentData,
 } from 'firebase/firestore'
@@ -170,6 +170,23 @@ export async function toggleReaction(
   } else {
     await updateDoc(ref, { [`reactions.${emoji}`]: next })
   }
+}
+
+export async function getMediaByUser(
+  uid:  string,
+  type: 'image' | 'video',
+): Promise<{ url: string; timestamp: number }[]> {
+  const q = query(
+    collectionGroup(db, 'messages'),
+    where('senderId', '==', uid),
+    where('type',     '==', type),
+    orderBy('timestamp', 'desc'),
+    limit(60),
+  )
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ url: d.data().mediaURL as string, timestamp: d.data().timestamp as number }))
+    .filter(m => !!m.url)
 }
 
 export function subscribeConnections(

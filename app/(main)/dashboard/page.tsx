@@ -1,9 +1,9 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
@@ -18,6 +18,7 @@ import { StoriesBar } from '@/components/social/StoriesBar'
 import { ForestRadio } from '@/components/audio/ForestRadio'
 import { BadgeDisplay } from '@/components/profile/BadgeDisplay'
 import { computeBadges } from '@/lib/badges'
+import { getMediaByUser } from '@/lib/firestore'
 
 const TreeScene = dynamic(() => import('@/components/3d/TreeScene'), {
   ssr: false,
@@ -61,6 +62,24 @@ export default function DashboardPage() {
   const [signingOut,   setSigningOut]   = useState(false)
   const [showStories,  setShowStories]  = useState(false)
   const [bioMode,      setBioMode]      = useState(false)
+  const [mediaGallery, setMediaGallery] = useState<'image' | 'video' | null>(null)
+  const [mediaItems,   setMediaItems]   = useState<{ url: string; timestamp: number }[]>([])
+  const [mediaLoading, setMediaLoading] = useState(false)
+
+  const openGallery = useCallback(async (type: 'image' | 'video') => {
+    if (!user) return
+    setMediaGallery(type)
+    setMediaLoading(true)
+    setMediaItems([])
+    try {
+      const items = await getMediaByUser(user.uid, type)
+      setMediaItems(items)
+    } catch {
+      toast.error('Could not load media. Check Firestore index.')
+    } finally {
+      setMediaLoading(false)
+    }
+  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -152,35 +171,89 @@ export default function DashboardPage() {
       </nav>
 
       {/* ── Stats overlay (top-left) ── */}
-      <div className="absolute top-16 left-3 flex flex-col gap-2 z-40 pointer-events-none">
+      <div className="absolute top-16 left-3 flex flex-col gap-2 z-40">
         <div className="flex flex-wrap gap-1.5">
-          <span className="stat-pill" title="Messages → Leaves">
+          <button
+            className="stat-pill hover:bg-white/10 transition-colors cursor-pointer"
+            title="View chats"
+            onClick={() => router.push('/chat')}
+          >
             🍃 <span className="tabular-nums">{profile.messageCount}</span>
-          </span>
-          <span className="stat-pill" title="Images → Flowers">
+          </button>
+          <button
+            className="stat-pill hover:bg-white/10 transition-colors cursor-pointer"
+            title="View photos"
+            onClick={() => openGallery('image')}
+          >
             🌸 <span className="tabular-nums">{profile.imageCount}</span>
-          </span>
-          <span className="stat-pill" title="Videos → Fruits">
+          </button>
+          <button
+            className="stat-pill hover:bg-white/10 transition-colors cursor-pointer"
+            title="View videos"
+            onClick={() => openGallery('video')}
+          >
             🍎 <span className="tabular-nums">{profile.videoCount}</span>
-          </span>
-          <span className="stat-pill" title="Connections → Roots">
+          </button>
+          <span className="stat-pill pointer-events-none" title="Connections → Roots">
             🌿 <span className="tabular-nums">{profile.connectionCount}</span>
           </span>
           {(profile as any).seeds > 0 && (
-            <span className="stat-pill" title="Seeds collected">
+            <span className="stat-pill pointer-events-none" title="Seeds collected">
               🌱 <span className="tabular-nums">{(profile as any).seeds}</span>
             </span>
           )}
         </div>
-        <span className="stat-pill self-start text-xs" title="Tree age">
+        <span className="stat-pill self-start text-xs pointer-events-none" title="Tree age">
           🕰 {stats.ageInDays === 0 ? 'Just sprouted!' : `${stats.ageInDays}d old`}
         </span>
         {badges.length > 0 && (
-          <div className="pointer-events-auto">
-            <BadgeDisplay badgeIds={badges} compact maxShow={5} />
-          </div>
+          <BadgeDisplay badgeIds={badges} compact maxShow={5} />
         )}
       </div>
+
+      {/* ── Media Gallery Modal ── */}
+      {mediaGallery && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMediaGallery(null)} />
+          <div className="relative z-10 w-full sm:max-w-lg glass rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-forest-800/50 flex-shrink-0">
+              <h2 className="text-base font-bold text-white">
+                {mediaGallery === 'image' ? '🌸 Your Photos' : '🍎 Your Videos'}
+              </h2>
+              <button onClick={() => setMediaGallery(null)} className="text-forest-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-forest-800/50">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {mediaLoading ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="aspect-square rounded-xl bg-forest-800/60 animate-pulse" />
+                  ))}
+                </div>
+              ) : mediaItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <p className="text-4xl">{mediaGallery === 'image' ? '🌸' : '🍎'}</p>
+                  <p className="text-forest-500 text-sm">No {mediaGallery === 'image' ? 'photos' : 'videos'} yet.</p>
+                  <p className="text-forest-700 text-xs">Send some in chat to see them here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {mediaItems.map((item, i) => (
+                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                      className="aspect-square rounded-xl overflow-hidden bg-forest-900/60 block hover:opacity-90 transition-opacity">
+                      {mediaGallery === 'image'
+                        ? <img src={item.url} alt="" className="w-full h-full object-cover" />
+                        : <video src={item.url} className="w-full h-full object-cover" muted playsInline />
+                      }
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Forest Radio ── */}
       <ForestRadio />
