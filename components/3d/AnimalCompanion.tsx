@@ -6,9 +6,12 @@ import * as THREE from 'three'
 
 export type AnimalType = 'fox' | 'owl' | 'deer' | 'rabbit' | 'none'
 
+import { BOND_GLOW } from '@/lib/companion-bond'
+
 interface AnimalCompanionProps {
-  type:   AnimalType
-  scale?: number
+  type:       AnimalType
+  scale?:     number
+  bondLevel?: number
 }
 
 // ─── Fox ─────────────────────────────────────────────────────────────────────
@@ -380,10 +383,35 @@ function RabbitCompanion({ scale = 1 }: { scale?: number }) {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-export function AnimalCompanion({ type, scale = 1 }: AnimalCompanionProps) {
-  if (type === 'fox')    return <FoxCompanion    scale={scale} />
-  if (type === 'owl')    return <OwlCompanion    scale={scale} />
-  if (type === 'deer')   return <DeerCompanion   scale={scale} />
-  if (type === 'rabbit') return <RabbitCompanion scale={scale} />
-  return null
+export function AnimalCompanion({ type, scale = 1, bondLevel = 0 }: AnimalCompanionProps) {
+  const bondScale   = 1 + bondLevel * 0.09
+  const effectiveS  = scale * bondScale
+  const glowColor   = BOND_GLOW[Math.min(bondLevel, 4)] as string
+  const glowIntensity = bondLevel > 0 ? 0.6 + bondLevel * 0.4 : 0
+
+  const inner = (() => {
+    if (type === 'fox')    return <FoxCompanion    scale={effectiveS} />
+    if (type === 'owl')    return <OwlCompanion    scale={effectiveS} />
+    if (type === 'deer')   return <DeerCompanion   scale={effectiveS} />
+    if (type === 'rabbit') return <RabbitCompanion scale={effectiveS} />
+    return null
+  })()
+
+  if (!inner) return null
+
+  return (
+    <group>
+      {inner}
+      {bondLevel > 0 && glowColor !== 'none' && (
+        <pointLight
+          position={[1.8, 1.2, 0.8]}
+          color={glowColor}
+          intensity={glowIntensity}
+          distance={3.5}
+          decay={2}
+        />
+      )}
+    </group>
+  )
+
 }

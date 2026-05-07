@@ -172,6 +172,24 @@ export async function toggleReaction(
   }
 }
 
+// ─── Daily Ritual ────────────────────────────────────────────────────────────
+export async function saveRitual(uid: string, date: string, prompt: string, answer: string): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'rituals', date), {
+    date, prompt, answer, completedAt: Date.now(),
+  })
+  await updateDoc(doc(db, 'users', uid), { lastRitual: date })
+}
+
+export async function getRitual(uid: string, date: string): Promise<string | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'rituals', date))
+  return snap.exists() ? (snap.data().answer as string) : null
+}
+
+// ─── Mood ─────────────────────────────────────────────────────────────────────
+export async function saveMood(uid: string, mood: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { mood, moodSetAt: Date.now() })
+}
+
 export async function getMediaByUser(
   uid:  string,
   type: 'image' | 'video',

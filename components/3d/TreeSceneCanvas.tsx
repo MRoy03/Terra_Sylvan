@@ -8,17 +8,20 @@ import { DynamicSky } from './DynamicSky'
 import { Ground } from './Ground'
 import { AnimalCompanion, AnimalType } from './AnimalCompanion'
 import { TreeStats, TreeType, BiomeType, TREE_BIOME_MAP } from '@/types'
-import { useWeather, WEATHER_ICON, WeatherCondition } from '@/lib/weather'
+import { useWeather, WEATHER_ICON } from '@/lib/weather'
+import type { WeatherCondition } from '@/lib/weather'
 import { getCurrentSeason, SEASON_LABEL } from '@/lib/seasons'
 
 interface TreeSceneProps {
-  stats:       TreeStats
-  displayName: string
-  status:      string
-  photoURL:    string | null
-  treeType:    TreeType
-  biomeType?:  BiomeType
-  animal?:     AnimalType
+  stats:            TreeStats
+  displayName:      string
+  status:           string
+  photoURL:         string | null
+  treeType:         TreeType
+  biomeType?:       BiomeType
+  animal?:          AnimalType
+  bondLevel?:       number
+  weatherOverride?: WeatherCondition
 }
 
 // ─── Weather HUD ──────────────────────────────────────────────────────────────
@@ -124,9 +127,10 @@ function WeatherHUD({ treeType }: { treeType: TreeType }) {
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
-export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal }: TreeSceneProps) {
+export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal, bondLevel = 0, weatherOverride }: TreeSceneProps) {
   const biome = biomeType ?? TREE_BIOME_MAP[treeType] ?? 'temperate'
-  const { condition } = useWeather()
+  const weather = useWeather()
+  const condition = weatherOverride ?? weather.condition
   const camDistance   = 4 + stats.scale * 4
 
   return (
@@ -136,7 +140,7 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
           <DynamicSky weatherCondition={condition} biomeType={biome} />
           <Ground biomeType={biome} />
           <Tree stats={stats} displayName={displayName} status={status} photoURL={photoURL} treeType={treeType} />
-          {animal && animal !== 'none' && <AnimalCompanion type={animal} scale={stats.scale} />}
+          {animal && animal !== 'none' && <AnimalCompanion type={animal} scale={stats.scale} bondLevel={bondLevel} />}
 
           <PerspectiveCamera makeDefault
             position={[camDistance * 0.7, stats.scale * 2.5, camDistance]}

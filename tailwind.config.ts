@@ -23,23 +23,41 @@ const config: Config = {
           950: '#052e16',
         },
         bark: {
-          light: '#c4956a',
+          light:   '#c4956a',
           DEFAULT: '#8B5E3C',
-          dark: '#5C3317',
+          dark:    '#5C3317',
         },
         soil: {
-          light: '#c4a882',
+          light:   '#c4a882',
           DEFAULT: '#8B7355',
-          dark: '#5C4A2A',
+          dark:    '#5C4A2A',
         },
         night: {
           DEFAULT: '#0a0f1e',
-          soft: '#111827',
+          soft:    '#111827',
+        },
+        gold: {
+          100: '#fef9e7',
+          300: '#fde68a',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#78350f',
+          900: '#451a03',
+        },
+        moss: {
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          700: '#047857',
+          900: '#064e3b',
         },
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-inter)', 'Georgia', 'serif'],
+        sans:    ['var(--font-inter)',      'system-ui', 'sans-serif'],
+        display: ['var(--font-cormorant)', 'Georgia',    'serif'],
       },
       backgroundImage: {
         'forest-gradient': 'linear-gradient(135deg, #052e16 0%, #14532d 40%, #166534 70%, #15803d 100%)',
@@ -48,12 +66,13 @@ const config: Config = {
         'night-gradient':  'linear-gradient(180deg, #0a0f1e 0%, #111827 50%, #052e16 100%)',
       },
       animation: {
-        'sway':     'sway 5s ease-in-out infinite',
-        'float':    'float 6s ease-in-out infinite',
-        'firefly':  'firefly 8s ease-in-out infinite',
-        'grow-up':  'growUp 0.8s ease-out forwards',
-        'fade-in':  'fadeIn 0.5s ease-out forwards',
+        'sway':       'sway 5s ease-in-out infinite',
+        'float':      'float 6s ease-in-out infinite',
+        'firefly':    'firefly 8s ease-in-out infinite',
+        'grow-up':    'growUp 0.8s ease-out forwards',
+        'fade-in':    'fadeIn 0.5s ease-out forwards',
         'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+        'dew-drop':   'dewDrop 3s ease-in-out infinite',
       },
       keyframes: {
         sway: {
@@ -82,6 +101,10 @@ const config: Config = {
         pulseGlow: {
           '0%, 100%': { boxShadow: '0 0 8px 2px rgba(34,197,94,0.3)' },
           '50%':       { boxShadow: '0 0 20px 6px rgba(34,197,94,0.6)' },
+        },
+        dewDrop: {
+          '0%, 100%': { opacity: '0.6', transform: 'translateY(0) scale(1)' },
+          '50%':       { opacity: '1',   transform: 'translateY(-3px) scale(1.1)' },
         },
       },
     },

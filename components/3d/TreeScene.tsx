@@ -5,13 +5,15 @@ import type { TreeStats, TreeType, BiomeType } from '@/types'
 import type { AnimalType } from './AnimalCompanion'
 
 interface TreeSceneProps {
-  stats:       TreeStats
-  displayName: string
-  status:      string
-  photoURL:    string | null
-  treeType:    TreeType
-  biomeType?:  BiomeType
-  animal?:     AnimalType
+  stats:            TreeStats
+  displayName:      string
+  status:           string
+  photoURL:         string | null
+  treeType:         TreeType
+  biomeType?:       BiomeType
+  animal?:          AnimalType
+  bondLevel?:       number
+  weatherOverride?: string
 }
 
 export default function TreeScene(props: TreeSceneProps) {

@@ -1,0 +1,87 @@
+'use client'
+
+import { useState } from 'react'
+import { MOOD_OPTIONS, getMoodOption, type MoodType } from '@/lib/mood'
+import { saveMood } from '@/lib/firestore'
+import toast from 'react-hot-toast'
+
+interface MoodPickerProps {
+  uid:          string
+  currentMood:  MoodType | null
+  onMoodChange: (mood: MoodType) => void
+}
+
+export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) {
+  const [open,   setOpen]   = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const current = currentMood ? getMoodOption(currentMood) : null
+
+  const handleSelect = async (mood: MoodType) => {
+    setSaving(true)
+    try {
+      await saveMood(uid, mood)
+      onMoodChange(mood)
+      setOpen(false)
+      const opt = getMoodOption(mood)
+      toast(`${opt.emoji} Mood set to ${opt.label}`, { duration: 2500 })
+    } catch {
+      toast.error('Could not save mood')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        title="Set your mood"
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border backdrop-blur-md transition-all
+          ${current
+            ? 'bg-black/30 border-white/15 text-white'
+            : 'bg-black/20 border-white/8 text-forest-600 hover:text-forest-300'
+          }`}
+      >
+        <span className="text-base leading-none">{current?.emoji ?? '🌿'}</span>
+        {current && <span className="text-[10px] font-medium hidden sm:block">{current.label}</span>}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full right-0 mt-2 z-50 animate-fade-in">
+            <div className="ritual-card p-3 w-52">
+              <p className="text-[10px] text-forest-600 uppercase tracking-wider font-medium mb-2.5 px-1">
+                How are you feeling?
+              </p>
+              <div className="flex flex-col gap-1">
+                {MOOD_OPTIONS.map(opt => (
+                  <button
+                    key={opt.type}
+                    onClick={() => handleSelect(opt.type)}
+                    disabled={saving}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all
+                      ${currentMood === opt.type
+                        ? 'bg-forest-800/60 text-white'
+                        : 'text-forest-400 hover:bg-forest-900/50 hover:text-forest-200'
+                      }`}
+                  >
+                    <span className="text-lg leading-none">{opt.emoji}</span>
+                    <div className="text-left">
+                      <p className="text-xs font-medium leading-none">{opt.label}</p>
+                      <p className="text-[10px] text-forest-600 mt-0.5">{opt.hint}</p>
+                    </div>
+                    {currentMood === opt.type && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: opt.accent }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
