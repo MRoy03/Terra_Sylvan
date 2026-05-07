@@ -194,17 +194,19 @@ export async function getMediaByUser(
   uid:  string,
   type: 'image' | 'video',
 ): Promise<{ url: string; timestamp: number }[]> {
+  // Single-field where clause — no composite index required
   const q = query(
     collectionGroup(db, 'messages'),
     where('senderId', '==', uid),
-    where('type',     '==', type),
-    orderBy('timestamp', 'desc'),
-    limit(60),
+    limit(200),
   )
   const snap = await getDocs(q)
   return snap.docs
-    .map(d => ({ url: d.data().mediaURL as string, timestamp: d.data().timestamp as number }))
-    .filter(m => !!m.url)
+    .map(d => d.data())
+    .filter(d => d.type === type && !!d.mediaURL)
+    .map(d => ({ url: d.mediaURL as string, timestamp: d.timestamp as number }))
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 60)
 }
 
 export function subscribeConnections(

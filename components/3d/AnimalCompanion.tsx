@@ -3,10 +3,9 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { BOND_GLOW } from '@/lib/companion-bond'
 
 export type AnimalType = 'fox' | 'owl' | 'deer' | 'rabbit' | 'none'
-
-import { BOND_GLOW } from '@/lib/companion-bond'
 
 interface AnimalCompanionProps {
   type:       AnimalType

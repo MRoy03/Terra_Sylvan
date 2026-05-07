@@ -3,6 +3,7 @@
 import { useState, useEffect, ComponentType } from 'react'
 import type { TreeStats, TreeType, BiomeType } from '@/types'
 import type { AnimalType } from './AnimalCompanion'
+import type { WeatherCondition } from '@/lib/weather'
 
 interface TreeSceneProps {
   stats:            TreeStats
@@ -13,7 +14,7 @@ interface TreeSceneProps {
   biomeType?:       BiomeType
   animal?:          AnimalType
   bondLevel?:       number
-  weatherOverride?: string
+  weatherOverride?: WeatherCondition
 }
 
 export default function TreeScene(props: TreeSceneProps) {

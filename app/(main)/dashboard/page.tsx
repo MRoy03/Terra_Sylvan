@@ -205,8 +205,8 @@ export default function DashboardPage() {
       </nav>
 
       {/* ── Stats overlay (top-left) ── */}
-      <div className="absolute top-16 left-3 flex flex-col gap-2 z-40">
-        <div className="flex flex-wrap gap-1.5">
+      <div className="absolute top-16 left-3 flex flex-col gap-2 z-40 pointer-events-none">
+        <div className="flex flex-wrap gap-1.5 pointer-events-auto">
           <button
             className="stat-pill hover:bg-white/8 transition-colors cursor-pointer"
             title="View chats"
@@ -228,16 +228,16 @@ export default function DashboardPage() {
           >
             🍎 <span className="tabular-nums">{profile.videoCount}</span>
           </button>
-          <span className="stat-pill pointer-events-none" title="Connections">
+          <span className="stat-pill">
             🌿 <span className="tabular-nums">{profile.connectionCount}</span>
           </span>
           {(profile as any).seeds > 0 && (
-            <span className="stat-pill pointer-events-none">
+            <span className="stat-pill">
               🌱 <span className="tabular-nums">{(profile as any).seeds}</span>
             </span>
           )}
         </div>
-        <span className="stat-pill self-start text-xs pointer-events-none">
+        <span className="stat-pill self-start text-xs">
           🕰 {stats.ageInDays === 0 ? 'Just sprouted' : `${stats.ageInDays}d old`}
         </span>
 
@@ -255,8 +255,19 @@ export default function DashboardPage() {
           </span>
         )}
 
-        {/* Daily ritual indicator */}
-        <DailyRitual uid={profile.uid} onComplete={() => setRitualDone(true)} />
+        {/* Memory rings + ritual on same row */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <DailyRitual uid={profile.uid} onComplete={() => setRitualDone(true)} />
+          <button
+            onClick={() => setShowRings(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border backdrop-blur-md
+                       bg-black/30 border-forest-800/50 text-forest-500 hover:text-forest-300
+                       hover:border-forest-600/50 transition-colors"
+            title="View tree memory rings"
+          >
+            🪵 Rings
+          </button>
+        </div>
 
         {badges.length > 0 && (
           <BadgeDisplay badgeIds={badges} compact maxShow={5} />

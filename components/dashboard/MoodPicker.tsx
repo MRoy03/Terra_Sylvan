@@ -37,14 +37,16 @@ export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) 
       <button
         onClick={() => setOpen(v => !v)}
         title="Set your mood"
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border backdrop-blur-md transition-all
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm border backdrop-blur-md transition-all
           ${current
-            ? 'bg-black/30 border-white/15 text-white'
-            : 'bg-black/20 border-white/8 text-forest-600 hover:text-forest-300'
+            ? 'bg-black/40 border-white/20 text-white'
+            : 'bg-forest-900/50 border-forest-700/50 text-forest-300 hover:text-white hover:border-forest-500/60'
           }`}
       >
         <span className="text-base leading-none">{current?.emoji ?? '🌿'}</span>
-        {current && <span className="text-[10px] font-medium hidden sm:block">{current.label}</span>}
+        <span className="text-[10px] font-medium hidden sm:block">
+          {current ? current.label : 'Mood'}
+        </span>
       </button>
 
       {open && (
