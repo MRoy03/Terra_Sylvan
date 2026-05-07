@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   description: 'A 3D forest social platform. Your profile is a tree. Your connections are roots.',
   keywords:    ['social', 'forest', '3D', 'chat', 'community', 'terra sylvan'],
   authors:     [{ name: 'Terra Sylvan' }],
+  icons: {
+    icon:             [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple:            [{ url: '/apple-icon.png', sizes: '180x180' }],
+    shortcut:         [{ url: '/favicon.svg' }],
+  },
   openGraph: {
     title:       'Terra Sylvan — Where Connections Grow',
     description: 'A 3D forest social platform.',

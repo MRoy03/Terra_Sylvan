@@ -15,7 +15,7 @@ import { TypingIndicator } from './TypingIndicator'
 import { MediaGallery } from './MediaGallery'
 import { formatLastSeen } from '@/lib/utils'
 import { UserProfile, MessageType } from '@/types'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 interface ChatWindowProps {
   chatId:    string
@@ -41,19 +41,19 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
     try {
       await sendMessage(chatId, user.uid, content, type, mediaURL, extra)
     } catch {
-      toast.error('Failed to send message')
+      forestToast.error('Failed to send message')
     }
   }
 
   const handleCall = async () => {
     if (callStatus !== 'idle') {
-      toast('You already have an active call.', { icon: '📞' })
+      forestToast.call('You already have an active call.')
       return
     }
     try {
       await startCall(otherUser)
     } catch {
-      toast.error('Could not start call. Check microphone permissions.')
+      forestToast.error('Could not start call', 'Check microphone permissions.')
     }
   }
 

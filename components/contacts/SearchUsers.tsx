@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { UserProfile } from '@/types'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 interface SearchUsersProps {
   onOpenChat: (chatId: string, user: UserProfile) => void
@@ -50,9 +50,9 @@ export function SearchUsers({ onOpenChat }: SearchUsersProps) {
       setResults((prev) =>
         prev.map((u) => u.uid === targetUser.uid ? { ...u, connStatus: 'pending' } : u),
       )
-      toast.success(`Friend request sent to ${targetUser.displayName} 🌿`)
+      forestToast.connect(`Friend request sent to ${targetUser.displayName}`)
     } catch {
-      toast.error('Failed to send request')
+      forestToast.error('Failed to send request')
     }
   }
 
@@ -62,7 +62,7 @@ export function SearchUsers({ onOpenChat }: SearchUsersProps) {
       const chatId = await getOrCreateChat(user.uid, targetUser.uid)
       onOpenChat(chatId, targetUser)
     } catch {
-      toast.error('Could not open chat')
+      forestToast.error('Could not open chat')
     }
   }
 

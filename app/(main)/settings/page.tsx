@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, Loader2, Save } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { clsx } from 'clsx'
 import { useAuth } from '@/lib/auth-context'
 import { updateUserProfile } from '@/lib/firestore'
@@ -66,11 +66,11 @@ export default function SettingsPage() {
     e.target.value = ''
 
     if (!isCloudinaryConfigured()) {
-      toast.error('Cloudinary not configured. Add credentials to .env.local')
+      forestToast.error('Cloudinary not configured', 'Add credentials to .env.local')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Photo must be under 5 MB.')
+      forestToast.error('Photo must be under 5 MB.')
       return
     }
 
@@ -79,7 +79,7 @@ export default function SettingsPage() {
       const result = await uploadMedia(file, setUploadPct)
       setPhotoURL(result.url)
     } catch {
-      toast.error('Photo upload failed.')
+      forestToast.error('Photo upload failed.')
     } finally {
       setUploading(false)
       setUploadPct(0)
@@ -99,10 +99,10 @@ export default function SettingsPage() {
         animal,
       })
       await refreshProfile()
-      toast.success('Profile updated! 🌿')
+      forestToast.growth('Profile updated!')
       router.push('/dashboard')
     } catch {
-      toast.error('Save failed. Try again.')
+      forestToast.error('Save failed. Try again.')
     } finally {
       setSaving(false)
     }

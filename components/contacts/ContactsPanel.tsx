@@ -11,7 +11,7 @@ import { Modal } from '@/components/ui/Modal'
 import { SearchUsers } from './SearchUsers'
 import { UserProfile } from '@/types'
 import { formatLastSeen } from '@/lib/utils'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 interface ContactsPanelProps {
   onOpenChat: (chatId: string, user: UserProfile) => void
@@ -56,7 +56,7 @@ export function ContactsPanel({ onOpenChat }: ContactsPanelProps) {
       const chatId = await getOrCreateChat(user.uid, profile.uid)
       onOpenChat(chatId, profile)
     } catch {
-      toast.error('Could not open chat')
+      forestToast.error('Could not open chat')
     }
   }
 
@@ -64,9 +64,9 @@ export function ContactsPanel({ onOpenChat }: ContactsPanelProps) {
     if (!user) return
     try {
       await acceptFriendRequest(user.uid, friendUid)
-      toast.success(`${name} is now connected to your roots! 🌿`)
+      forestToast.connect(`${name} is now connected to your roots!`)
     } catch {
-      toast.error('Failed to accept request')
+      forestToast.error('Failed to accept request')
     }
   }
 
@@ -75,7 +75,7 @@ export function ContactsPanel({ onOpenChat }: ContactsPanelProps) {
     try {
       await rejectFriendRequest(user.uid, friendUid)
     } catch {
-      toast.error('Failed to reject request')
+      forestToast.error('Failed to reject request')
     }
   }
 

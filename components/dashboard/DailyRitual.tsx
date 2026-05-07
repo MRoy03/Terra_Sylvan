@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Feather, Leaf } from 'lucide-react'
 import { getDailyPrompt, getTodayKey } from '@/lib/ritual'
 import { saveRitual, getRitual } from '@/lib/firestore'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 interface DailyRitualProps {
   uid: string
@@ -39,9 +39,9 @@ export function DailyRitual({ uid, onComplete }: DailyRitualProps) {
       setDone(true)
       setOpen(false)
       onComplete()
-      toast('🌿 Ritual complete — your tree glows with intention.', { duration: 4000 })
+      forestToast.ritual('Ritual complete — your tree glows with intention.', { duration: 4000 })
     } catch {
-      toast.error('Could not save your ritual.')
+      forestToast.error('Could not save your ritual.')
     } finally {
       setSaving(false)
     }

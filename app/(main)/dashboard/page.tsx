@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Network } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { computeTreeStats, getStageBadge } from '@/lib/tree-utils'
@@ -21,7 +21,8 @@ import { computeBadges } from '@/lib/badges'
 import { getMediaByUser } from '@/lib/firestore'
 import { getMoodOption, type MoodType } from '@/lib/mood'
 import { computeBondXP, getBondLevel, BOND_GLOW } from '@/lib/companion-bond'
-import { DailyRitual } from '@/components/dashboard/DailyRitual'
+import { DailyRitual }   from '@/components/dashboard/DailyRitual'
+import { TreeRingIcon }  from '@/components/icons/TreeRingIcon'
 import { MemoryRings } from '@/components/dashboard/MemoryRings'
 import { MoodPicker } from '@/components/dashboard/MoodPicker'
 import type { WeatherCondition } from '@/lib/weather'
@@ -92,7 +93,7 @@ export default function DashboardPage() {
     const key   = `ts_stage_${profile.uid}`
     const prev  = sessionStorage.getItem(key)
     if (prev && prev !== stats.stage && MILESTONE_MESSAGES[stats.stage]) {
-      toast(MILESTONE_MESSAGES[stats.stage], { duration: 5000 })
+      forestToast.growth(MILESTONE_MESSAGES[stats.stage], { duration: 5000 })
     }
     sessionStorage.setItem(key, stats.stage)
   }, [profile])
@@ -106,7 +107,7 @@ export default function DashboardPage() {
       const items = await getMediaByUser(user.uid, type)
       setMediaItems(items)
     } catch {
-      toast.error('Could not load media. A Firestore index may be needed.')
+      forestToast.error('Could not load media', 'A Firestore index may be needed.')
     } finally {
       setMediaLoading(false)
     }
@@ -134,10 +135,10 @@ export default function DashboardPage() {
     setSigningOut(true)
     try {
       await logOut()
-      toast.success('See you in the forest.')
+      forestToast.info('See you in the forest.')
       router.replace('/login')
     } catch {
-      toast.error('Sign-out failed')
+      forestToast.error('Sign-out failed')
       setSigningOut(false)
     }
   }
@@ -265,7 +266,8 @@ export default function DashboardPage() {
                        hover:border-forest-600/50 transition-colors"
             title="View tree memory rings"
           >
-            🪵 Rings
+            <TreeRingIcon size={16} />
+            <span>Rings</span>
           </button>
         </div>
 
@@ -359,7 +361,8 @@ export default function DashboardPage() {
                          bg-forest-900/40 border border-forest-800/40 text-forest-400
                          hover:text-forest-200 hover:bg-forest-800/40 transition-colors"
             >
-              🪵 Memory Rings
+              <TreeRingIcon size={15} />
+              <span>Memory Rings</span>
             </button>
             <Link href="/settings" className="flex-1">
               <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs

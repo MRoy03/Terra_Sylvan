@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { MOOD_OPTIONS, getMoodOption, type MoodType } from '@/lib/mood'
 import { saveMood } from '@/lib/firestore'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 interface MoodPickerProps {
   uid:          string
@@ -24,9 +24,9 @@ export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) 
       onMoodChange(mood)
       setOpen(false)
       const opt = getMoodOption(mood)
-      toast(`${opt.emoji} Mood set to ${opt.label}`, { duration: 2500 })
+      forestToast.mood(`Mood set to ${opt.label}`, { duration: 2500 })
     } catch {
-      toast.error('Could not save mood')
+      forestToast.error('Could not save mood')
     } finally {
       setSaving(false)
     }

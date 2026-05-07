@@ -10,7 +10,7 @@ import {
   type Story,
 } from '@/lib/stories'
 import { TREE_CONFIGS } from '@/types'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface StoryGroup {
@@ -169,11 +169,11 @@ function CreateStoryModal({ onClose, onCreated }: { onClose: () => void; onCreat
     setBusy(true)
     try {
       await createStory(user.uid, profile.displayName, profile.photoURL, profile.treeType, text.trim())
-      toast.success('Story shared! 🌿')
+      forestToast.growth('Story shared!')
       onCreated()
       onClose()
     } catch {
-      toast.error('Could not share story')
+      forestToast.error('Could not share story')
     } finally {
       setBusy(false)
     }

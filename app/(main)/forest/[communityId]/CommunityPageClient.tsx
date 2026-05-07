@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { ArrowLeft, Users, LogIn, LogOut, Loader2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { useAuth } from '@/lib/auth-context'
 import { subscribeCommunity, getCommunityMembers, joinCommunity, leaveCommunity } from '@/lib/communities'
 import { getUserProfile } from '@/lib/firestore'
@@ -101,9 +101,9 @@ export function CommunityPageClient() {
     try {
       await joinCommunity(communityId, user.uid)
       setIsMember(true)
-      toast.success('You joined the forest! 🌿')
+      forestToast.growth('You joined the forest!')
     } catch {
-      toast.error('Could not join. Try again.')
+      forestToast.error('Could not join. Try again.')
     } finally {
       setJoining(false)
     }
@@ -115,9 +115,9 @@ export function CommunityPageClient() {
     try {
       await leaveCommunity(communityId, user.uid)
       setIsMember(false)
-      toast.success('You left the forest.')
+      forestToast.info('You left the forest.')
     } catch {
-      toast.error('Could not leave. Try again.')
+      forestToast.error('Could not leave. Try again.')
     } finally {
       setJoining(false)
     }

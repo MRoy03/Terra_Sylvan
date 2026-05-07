@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import { Smile, Paperclip, Send, X, Loader2, Leaf, Wind } from 'lucide-react'
 import { EmojiPanel } from './EmojiPanel'
 import { uploadMedia, isCloudinaryConfigured } from '@/lib/cloudinary'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 
 type InputMode = 'text' | 'whisper' | 'leaf'
 
@@ -69,14 +69,14 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-    if (!isCloudinaryConfigured()) { toast.error('Cloudinary not set up yet. Add credentials to .env.local'); return }
+    if (!isCloudinaryConfigured()) { forestToast.error('Cloudinary not set up', 'Add credentials to .env.local'); return }
     const maxMB = file.type.startsWith('video/') ? 50 : 10
-    if (file.size > maxMB * 1024 * 1024) { toast.error(`File too large. Max ${maxMB}MB.`); return }
+    if (file.size > maxMB * 1024 * 1024) { forestToast.error(`File too large. Max ${maxMB}MB.`); return }
     setUploading(true)
     try {
       const result = await uploadMedia(file, setUploadPct)
       await onSend(result.type === 'video' ? '[Video]' : '[Image]', result.type, result.url)
-    } catch { toast.error('Upload failed. Try again.') }
+    } catch { forestToast.error('Upload failed. Try again.') }
     finally { setUploading(false); setUploadPct(0) }
   }
 

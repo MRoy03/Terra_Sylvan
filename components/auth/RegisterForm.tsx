@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User, AtSign } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { clsx } from 'clsx'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/Button'
@@ -63,14 +63,14 @@ export function RegisterForm() {
     setLoading(true)
     try {
       await signUp(email, password, username.toLowerCase(), displayName, selectedTree)
-      toast.success('Your tree has been planted! 🌱')
+      forestToast.seed('Your tree has been planted!')
       router.push('/dashboard')
     } catch (err: any) {
       const msg =
         err.code === 'auth/email-already-in-use' ? 'This email is already registered.' :
         err.code === 'auth/weak-password'         ? 'Password is too weak.' :
         'Registration failed. Please try again.'
-      toast.error(msg)
+      forestToast.error(msg)
     } finally {
       setLoading(false)
     }

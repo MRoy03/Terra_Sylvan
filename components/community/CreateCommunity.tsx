@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X, Trees, Lock, Globe } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { clsx } from 'clsx'
 import { useAuth } from '@/lib/auth-context'
 import { createCommunity } from '@/lib/communities'
@@ -43,11 +43,11 @@ export function CreateCommunity({ onClose, onCreate }: CreateCommunityProps) {
     setLoading(true)
     try {
       const id = await createCommunity(user.uid, name.trim(), description.trim(), biomeType, isPrivate)
-      toast.success(`${BIOME_CONFIGS[biomeType].emoji} ${name} forest planted!`)
+      forestToast.growth(`${name} forest planted!`)
       onCreate?.(id)
       onClose()
     } catch {
-      toast.error('Failed to create community. Try again.')
+      forestToast.error('Failed to create community. Try again.')
     } finally {
       setLoading(false)
     }

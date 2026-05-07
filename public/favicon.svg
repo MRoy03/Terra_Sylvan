@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Outer bark ring -->
+  <circle cx="32" cy="32" r="31" fill="#0b1e0d"/>
+  <circle cx="32" cy="32" r="31" fill="none" stroke="#1a3d10" stroke-width="1.5"/>
+
+  <!-- Growth ring 4 (outermost) -->
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#1e4a14" stroke-width="2"/>
+
+  <!-- Growth ring 3 -->
+  <circle cx="32" cy="32" r="20" fill="none" stroke="#2a6320" stroke-width="1.8"/>
+
+  <!-- Growth ring 2 -->
+  <circle cx="32" cy="32" r="14" fill="none" stroke="#3a8030" stroke-width="1.5"/>
+
+  <!-- Growth ring 1 (inner) -->
+  <circle cx="32" cy="32" r="8.5" fill="none" stroke="#52a840" stroke-width="1.2"/>
+
+  <!-- Heartwood fill -->
+  <circle cx="32" cy="32" r="7" fill="#7c4b1a"/>
+  <circle cx="32" cy="32" r="5" fill="#9c6228"/>
+  <circle cx="32" cy="32" r="3" fill="#b87a35"/>
+  <!-- Pith centre -->
+  <circle cx="32" cy="32" r="1.5" fill="#d4a055"/>
+
+  <!-- Radial grain lines (medullary rays) -->
+  <g stroke="#1e4a14" stroke-width="0.6" opacity="0.5">
+    <line x1="32" y1="6"  x2="32" y2="22"/>
+    <line x1="32" y1="42" x2="32" y2="58"/>
+    <line x1="6"  y1="32" x2="22" y2="32"/>
+    <line x1="42" y1="32" x2="58" y2="32"/>
+    <line x1="12.9" y1="12.9" x2="22.6" y2="22.6"/>
+    <line x1="41.4" y1="41.4" x2="51.1" y2="51.1"/>
+    <line x1="51.1" y1="12.9" x2="41.4" y2="22.6"/>
+    <line x1="22.6" y1="41.4" x2="12.9" y2="51.1"/>
+  </g>
+
+  <!-- Tiny leaf sprout at top — the "T" of Terra -->
+  <path d="M32 5 C29 2 25 3 25 7 C25 10 29 11 32 9 C35 11 39 10 39 7 C39 3 35 2 32 5Z"
+        fill="#4dbb6f" opacity="0.9"/>
+  <line x1="32" y1="5" x2="32" y2="9" stroke="#2d7a45" stroke-width="0.8"/>
+</svg>

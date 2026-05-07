@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, LogIn } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -33,7 +33,7 @@ export function LoginForm() {
     setLoading(true)
     try {
       await signIn(email, password)
-      toast.success('Welcome back to the forest! 🌳')
+      forestToast.growth('Welcome back to the forest!')
       router.push('/dashboard')
     } catch (err: any) {
       const msg =
@@ -42,7 +42,7 @@ export function LoginForm() {
         err.code === 'auth/invalid-email'    ? 'Invalid email address.' :
         err.code === 'auth/too-many-requests'? 'Too many attempts. Try again later.' :
         'Sign-in failed. Please try again.'
-      toast.error(msg)
+      forestToast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -52,10 +52,10 @@ export function LoginForm() {
     setGLoading(true)
     try {
       await signInWithGoogle()
-      toast.success('Welcome to the forest! 🌿')
+      forestToast.growth('Welcome to the forest!')
       router.push('/dashboard')
     } catch {
-      toast.error('Google sign-in failed.')
+      forestToast.error('Google sign-in failed.')
     } finally {
       setGLoading(false)
     }

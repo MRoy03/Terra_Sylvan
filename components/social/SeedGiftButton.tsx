@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Sprout, Loader2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { giftSeeds, SEED_GIFT_AMOUNT } from '@/lib/seeds'
 import { useAuth } from '@/lib/auth-context'
 
@@ -22,9 +22,9 @@ export function SeedGiftButton({ toUid, toName, compact }: SeedGiftButtonProps) 
     setGifting(true)
     try {
       await giftSeeds(user.uid, toUid)
-      toast.success(`🌱 Sent ${SEED_GIFT_AMOUNT} seeds to ${toName}!`, { duration: 3000 })
+      forestToast.seed(`Sent ${SEED_GIFT_AMOUNT} seeds to ${toName}!`, { duration: 3000 })
     } catch (err: any) {
-      toast.error(err?.message ?? 'Could not gift seeds. Try again.')
+      forestToast.error(err?.message ?? 'Could not gift seeds. Try again.')
     } finally {
       setGifting(false)
     }

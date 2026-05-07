@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Smile, Paperclip, Send, Loader2, X, Leaf, Wind, Sparkles } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { forestToast } from '@/lib/forest-toast'
 import { useAuth } from '@/lib/auth-context'
 import { sendGroupMessage, subscribeGroupMessages } from '@/lib/communities'
 import { EmojiPanel } from '@/components/chat/EmojiPanel'
@@ -183,7 +183,7 @@ export function GroupChat({ communityId, memberMap }: GroupChatProps) {
       )
       setText('')
       setInputMode('text')
-    } catch { toast.error('Failed to send message.') }
+    } catch { forestToast.error('Failed to send message.') }
     finally { setSending(false) }
   }
 
@@ -193,7 +193,7 @@ export function GroupChat({ communityId, memberMap }: GroupChatProps) {
     try {
       const fortune = getRandomFortune()
       await sendGroupMessage(communityId, user.uid, `${fortune.emoji}\n${fortune.text}`, 'oracle')
-    } catch { toast.error('The oracle is silent.') }
+    } catch { forestToast.error('The oracle is silent.') }
     finally { setSending(false) }
   }
 
@@ -208,7 +208,7 @@ export function GroupChat({ communityId, memberMap }: GroupChatProps) {
     setShowEmoji(false)
     setSending(true)
     try { await sendGroupMessage(communityId, user.uid, sticker, 'sticker') }
-    catch { toast.error('Failed to send sticker.') }
+    catch { forestToast.error('Failed to send sticker.') }
     finally { setSending(false) }
   }
 
@@ -216,14 +216,14 @@ export function GroupChat({ communityId, memberMap }: GroupChatProps) {
     const file = e.target.files?.[0]
     if (!file || !user) return
     e.target.value = ''
-    if (!isCloudinaryConfigured()) { toast.error('Cloudinary not configured.'); return }
+    if (!isCloudinaryConfigured()) { forestToast.error('Cloudinary not configured.'); return }
     const maxMB = file.type.startsWith('video/') ? 50 : 10
-    if (file.size > maxMB * 1024 * 1024) { toast.error(`Max ${maxMB}MB.`); return }
+    if (file.size > maxMB * 1024 * 1024) { forestToast.error(`Max ${maxMB}MB.`); return }
     setUploading(true)
     try {
       const result = await uploadMedia(file, setUploadPct)
       await sendGroupMessage(communityId, user.uid, result.type === 'video' ? '[Video]' : '[Image]', result.type as any, result.url)
-    } catch { toast.error('Upload failed.') }
+    } catch { forestToast.error('Upload failed.') }
     finally { setUploading(false); setUploadPct(0) }
   }
 
