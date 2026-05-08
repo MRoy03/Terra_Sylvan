@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Terra Sylvan — Developer Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:        #060f07;
+  --bg2:       #0a1a0c;
+  --bg3:       #0e2010;
+  --border:    rgba(134,239,172,0.10);
+  --border2:   rgba(134,239,172,0.18);
+  --text:      #d4e8d4;
+  --text2:     #86b086;
+  --text3:     #4a7a4a;
+  --green:     #4ade80;
+  --green2:    #22c55e;
+  --amber:     #fbbf24;
+  --violet:    #a78bfa;
+  --sky:       #7dd3fc;
+  --red:       #f87171;
+  --code-bg:   #0a180c;
+  --sidebar-w: 260px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 15px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.7;
+  display: flex;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 0 0 40px;
+}
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-track { background: transparent; }
+#sidebar::-webkit-scrollbar-thumb { background: #1a3a1f; border-radius: 4px; }
+.sidebar-header {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: var(--bg2);
+  z-index: 2;
+}
+.sidebar-header .logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #a7f3d0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-header .sub {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.nav-section {
+  padding: 14px 12px 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.nav-item {
+  display: block;
+  padding: 6px 16px;
+  font-size: 12.5px;
+  color: var(--text2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.nav-item:hover { color: var(--green); border-left-color: var(--green); background: rgba(74,222,128,0.05); }
+.nav-item.active { color: var(--green); border-left-color: var(--green); background: rgba(74,222,128,0.07); }
+.nav-sub {
+  display: block;
+  padding: 4px 16px 4px 28px;
+  font-size: 11.5px;
+  color: var(--text3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nav-sub:hover { color: var(--text2); }
+
+/* ── Main content ── */
+#main {
+  margin-left: var(--sidebar-w);
+  max-width: 900px;
+  padding: 48px 48px 120px;
+  width: 100%;
+}
+@media (max-width: 760px) {
+  #sidebar { display: none; }
+  #main { margin-left: 0; padding: 24px 20px 80px; }
+}
+
+/* ── Typography ── */
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px;
+  font-weight: 600;
+  color: #e2f5e2;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #c8e8c8;
+  margin: 56px 0 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #a7d8a7;
+  margin: 30px 0 10px;
+}
+h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+p { margin-bottom: 14px; color: var(--text); font-size: 14px; }
+ul, ol { margin: 8px 0 16px 20px; }
+li { margin-bottom: 5px; font-size: 14px; color: var(--text); }
+a { color: var(--green); text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #e2f5e2; font-weight: 600; }
+em { color: var(--amber); font-style: italic; }
+
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(135deg, rgba(10,40,12,0.6) 0%, rgba(6,15,7,0) 60%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 40px;
+  margin-bottom: 40px;
+}
+.hero p { font-size: 15px; color: var(--text2); margin-bottom: 0; }
+.meta-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid;
+}
+.pill-green  { background: rgba(74,222,128,0.08);  border-color: rgba(74,222,128,0.25);  color: #86efac; }
+.pill-amber  { background: rgba(251,191,36,0.08);  border-color: rgba(251,191,36,0.25);  color: #fcd34d; }
+.pill-violet { background: rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.25); color: #c4b5fd; }
+.pill-sky    { background: rgba(125,211,252,0.08); border-color: rgba(125,211,252,0.25); color: #bae6fd; }
+.pill-red    { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.25); color: #fca5a5; }
+
+/* ── Code blocks ── */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+code {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  background: rgba(10,40,12,0.5);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 6px;
+  color: #86efac;
+}
+pre code { background: none; border: none; padding: 0; font-size: 12.5px; color: var(--text); }
+.kw  { color: #c084fc; }   /* keyword */
+.fn  { color: #7dd3fc; }   /* function */
+.st  { color: #86efac; }   /* string */
+.cm  { color: #3a5a3a; }   /* comment */
+.ty  { color: #fbbf24; }   /* type */
+.nu  { color: #f97316; }   /* number */
+.op  { color: #e879f9; }   /* operator */
+
+/* ── Cards ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 14px 0;
+}
+.card h4 { margin-top: 0; }
+
+/* ── Tables ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 22px;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--bg3);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border2);
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(74,222,128,0.03); }
+td:first-child { color: var(--sky); font-family: 'Fira Code', monospace; font-size: 12px; }
+
+/* ── Flow diagram ── */
+.flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 14px 0;
+  font-size: 12px;
+}
+.flow-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.flow-arrow { color: var(--green); font-size: 16px; }
+
+/* ── Callout boxes ── */
+.callout {
+  border-left: 3px solid;
+  border-radius: 0 10px 10px 0;
+  padding: 12px 18px;
+  margin: 14px 0;
+  font-size: 13px;
+}
+.callout-info  { border-color: var(--sky);   background: rgba(125,211,252,0.06); }
+.callout-warn  { border-color: var(--amber); background: rgba(251,191,36,0.06); }
+.callout-tip   { border-color: var(--green); background: rgba(74,222,128,0.06); }
+.callout-alert { border-color: var(--red);   background: rgba(248,113,113,0.06); }
+.callout strong { display: block; margin-bottom: 4px; }
+.callout-info  strong { color: var(--sky);   }
+.callout-warn  strong { color: var(--amber); }
+.callout-tip   strong { color: var(--green); }
+.callout-alert strong { color: var(--red);   }
+
+/* ── Directory tree ── */
+.dir-tree {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 14px 0;
+}
+.dir-tree .dir  { color: var(--sky); }
+.dir-tree .file { color: var(--text2); }
+.dir-tree .note { color: var(--text3); }
+
+/* ── Section anchor offset ── */
+section { scroll-margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">🌳 Terra Sylvan</div>
+    <div class="sub">Developer Guide</div>
+  </div>
+
+  <div class="nav-section">Overview</div>
+  <a class="nav-item" href="#overview">Project Overview</a>
+  <a class="nav-item" href="#tech-stack">Tech Stack</a>
+  <a class="nav-item" href="#directory">Directory Structure</a>
+  <a class="nav-item" href="#env">Environment Variables</a>
+
+  <div class="nav-section">Core Systems</div>
+  <a class="nav-item" href="#auth">Authentication</a>
+  <a class="nav-sub" href="#auth-flow">Auth Flow</a>
+  <a class="nav-sub" href="#auth-context">AuthContext</a>
+  <a class="nav-item" href="#firestore">Firestore Database</a>
+  <a class="nav-sub" href="#schema">Schema</a>
+  <a class="nav-sub" href="#firestore-fns">Functions</a>
+  <a class="nav-item" href="#routing">Routing &amp; Pages</a>
+
+  <div class="nav-section">3D Scene</div>
+  <a class="nav-item" href="#scene">Scene Architecture</a>
+  <a class="nav-sub" href="#treescene">TreeScene</a>
+  <a class="nav-sub" href="#tree">Tree Geometry</a>
+  <a class="nav-sub" href="#weather">Weather &amp; Sky</a>
+  <a class="nav-sub" href="#animals">Animal Companions</a>
+
+  <div class="nav-section">Features</div>
+  <a class="nav-item" href="#chat">Chat System</a>
+  <a class="nav-item" href="#ritual">Daily Ritual</a>
+  <a class="nav-item" href="#rings">Memory Rings</a>
+  <a class="nav-item" href="#bond">Companion Bond</a>
+  <a class="nav-item" href="#mood">Mood Weather</a>
+  <a class="nav-item" href="#radio">Forest Radio</a>
+  <a class="nav-item" href="#stories">Stories</a>
+  <a class="nav-item" href="#community">Community Forest</a>
+
+  <div class="nav-section">UI Layer</div>
+  <a class="nav-item" href="#components">Component Library</a>
+  <a class="nav-item" href="#toasts">Notifications</a>
+  <a class="nav-item" href="#css">CSS &amp; Styling</a>
+
+  <div class="nav-section">Admin &amp; Deploy</div>
+  <a class="nav-item" href="#admin">Admin Panel</a>
+  <a class="nav-item" href="#deploy">Deployment</a>
+  <a class="nav-item" href="#add-feature">Adding a Feature</a>
+  <a class="nav-item" href="#debug">Debugging Tips</a>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Terra Sylvan<br/><em style="font-size:22px;font-weight:400">Developer Guide</em></h1>
+  <p>A complete technical reference for every layer of the Terra Sylvan codebase — from Firebase Auth to React Three Fiber trees to the GitHub Pages deployment pipeline. Designed so an entry-level coder can understand, navigate, and extend the project.</p>
+  <div class="meta-pills">
+    <span class="pill pill-green">Next.js 16 (App Router)</span>
+    <span class="pill pill-amber">Firebase (Auth + Firestore)</span>
+    <span class="pill pill-violet">React Three Fiber</span>
+    <span class="pill pill-sky">TypeScript</span>
+    <span class="pill pill-red">GitHub Pages (Static Export)</span>
+  </div>
+</div>
+
+<!-- 1. OVERVIEW -->
+<section id="overview">
+<h2>1 · Project Overview</h2>
+<p>Terra Sylvan is a social platform where <strong>every user profile is a 3D tree</strong>. Your tree grows as you send messages, upload media, and connect with others. The site is a fully static web app — there is no backend server. All data lives in Google Firebase.</p>
+
+<div class="card">
+  <h4>Core concept in one sentence</h4>
+  <p style="margin:0">User activity (messages, photos, connections) → Firestore numbers → <code>computeTreeStats()</code> → 3D tree geometry scales, sprouts leaves/flowers/fruit → React Three Fiber renders it.</p>
+</div>
+
+<h3>What the site can do</h3>
+<ul>
+  <li>Register / log in (email or Google)</li>
+  <li>Real-time 1-to-1 chat with text, images, videos, stickers, voice notes</li>
+  <li>Friend requests and a root-network graph</li>
+  <li>Daily growth ritual (journal prompt stored in Firestore)</li>
+  <li>Tree memory rings SVG (growth history visualisation)</li>
+  <li>Companion bond level (XP computed from activity)</li>
+  <li>Mood picker → changes the 3D sky weather</li>
+  <li>Forest Radio (procedural Web Audio API ambience)</li>
+  <li>Community forests with shared group chat</li>
+  <li>Stories bar</li>
+  <li>Admin panel (email-gated) for viewing and deleting users</li>
+</ul>
+</section>
+
+<!-- 2. TECH STACK -->
+<section id="tech-stack">
+<h2>2 · Tech Stack</h2>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
+  <tr><td>Framework</td><td>Next.js 16 (App Router)</td><td>File-based routing, React Server Components, static export for GitHub Pages</td></tr>
+  <tr><td>Language</td><td>TypeScript</td><td>Type safety across all files</td></tr>
+  <tr><td>Styling</td><td>Tailwind CSS v3</td><td>Utility-first; avoids separate CSS files for most UI</td></tr>
+  <tr><td>3D Rendering</td><td>React Three Fiber + @react-three/drei</td><td>Declarative Three.js inside React; lazy-loaded to avoid SSR issues</td></tr>
+  <tr><td>Auth</td><td>Firebase Authentication</td><td>Email/password + Google OAuth out of the box</td></tr>
+  <tr><td>Database</td><td>Firebase Firestore</td><td>Real-time document DB; no backend needed</td></tr>
+  <tr><td>Media storage</td><td>Cloudinary</td><td>Image/video upload and CDN delivery</td></tr>
+  <tr><td>Notifications</td><td>react-hot-toast (custom)</td><td>Lightweight; we wrap it with ForestToastCard for nature-themed UI</td></tr>
+  <tr><td>Icons</td><td>lucide-react</td><td>Consistent SVG icon set</td></tr>
+  <tr><td>Fonts</td><td>Inter + Cormorant Garamond (Google Fonts)</td><td>Inter for UI, Cormorant for editorial / display text</td></tr>
+  <tr><td>Deployment</td><td>GitHub Actions → GitHub Pages</td><td>Free hosting; `next build` → `out/` → Pages artifact</td></tr>
+</table>
+</section>
+
+<!-- 3. DIRECTORY -->
+<section id="directory">
+<h2>3 · Directory Structure</h2>
+<div class="dir-tree">
+<span class="dir">Terra_Sylvan/</span><br>
+├── <span class="dir">app/</span>                   <span class="note">← Next.js App Router root</span><br>
+│   ├── <span class="file">layout.tsx</span>         <span class="note">← Root HTML shell, fonts, Toaster, AuthProvider</span><br>
+│   ├── <span class="file">globals.css</span>        <span class="note">← All global CSS (glass, pills, animations, seasons)</span><br>
+│   ├── <span class="file">icon.tsx</span>           <span class="note">← Auto-generated 32px favicon (ImageResponse)</span><br>
+│   ├── <span class="file">apple-icon.tsx</span>     <span class="note">← 180px Apple touch icon</span><br>
+│   ├── <span class="file">manifest.ts</span>        <span class="note">← PWA web manifest</span><br>
+│   ├── <span class="dir">(auth)/</span>             <span class="note">← Public pages (no sidebar)</span><br>
+│   │   ├── <span class="dir">login/page.tsx</span><br>
+│   │   └── <span class="dir">register/page.tsx</span><br>
+│   └── <span class="dir">(main)/</span>             <span class="note">← Protected pages (require login)</span><br>
+│       ├── <span class="dir">dashboard/page.tsx</span>  <span class="note">← Main 3D tree view + HUD</span><br>
+│       ├── <span class="dir">chat/page.tsx</span><br>
+│       ├── <span class="dir">contacts/page.tsx</span><br>
+│       ├── <span class="dir">forest/page.tsx</span>     <span class="note">← Community list</span><br>
+│       ├── <span class="dir">forest/[communityId]/</span><br>
+│       ├── <span class="dir">settings/page.tsx</span><br>
+│       └── <span class="dir">admin/page.tsx</span>      <span class="note">← Admin only (email-gated)</span><br>
+│<br>
+├── <span class="dir">components/</span>             <span class="note">← All React components</span><br>
+│   ├── <span class="dir">3d/</span>                 <span class="note">← Three.js / React Three Fiber</span><br>
+│   │   ├── <span class="file">TreeScene.tsx</span>   <span class="note">← Lazy loader wrapper (avoids SSR crash)</span><br>
+│   │   ├── <span class="file">TreeSceneCanvas.tsx</span> <span class="note">← Actual Canvas + all 3D children</span><br>
+│   │   ├── <span class="file">Tree.tsx</span>        <span class="note">← All 44+ tree type geometries</span><br>
+│   │   ├── <span class="file">AnimalCompanion.tsx</span><br>
+│   │   ├── <span class="file">DynamicSky.tsx</span><br>
+│   │   └── <span class="file">GroundPlane.tsx</span><br>
+│   ├── <span class="dir">auth/</span>               <span class="note">← LoginForm, RegisterForm</span><br>
+│   ├── <span class="dir">chat/</span>               <span class="note">← ChatWindow, MessageBubble, MessageInput …</span><br>
+│   ├── <span class="dir">community/</span>          <span class="note">← GroupChat, CreateCommunity</span><br>
+│   ├── <span class="dir">contacts/</span>           <span class="note">← ContactsPanel, SearchUsers</span><br>
+│   ├── <span class="dir">audio/</span>              <span class="note">← ForestRadio (Web Audio API)</span><br>
+│   ├── <span class="dir">dashboard/</span>          <span class="note">← DailyRitual, MemoryRings, MoodPicker</span><br>
+│   ├── <span class="dir">icons/</span>              <span class="note">← TreeRingIcon (SVG component)</span><br>
+│   ├── <span class="dir">profile/</span>            <span class="note">← BadgeDisplay</span><br>
+│   ├── <span class="dir">social/</span>             <span class="note">← StoriesBar, RootNetwork, SeedGiftButton</span><br>
+│   ├── <span class="dir">ui/</span>                 <span class="note">← Button, Input, Avatar, ForestToast</span><br>
+│   └── <span class="dir">voice/</span>              <span class="note">← IncomingCallAlert, voice call UI</span><br>
+│<br>
+├── <span class="dir">lib/</span>                    <span class="note">← Pure logic / utilities (no JSX)</span><br>
+│   ├── <span class="file">firebase.ts</span>        <span class="note">← Firebase app + auth + db init</span><br>
+│   ├── <span class="file">auth-context.tsx</span>   <span class="note">← React Context for auth state</span><br>
+│   ├── <span class="file">firestore.ts</span>       <span class="note">← All Firestore reads/writes</span><br>
+│   ├── <span class="file">tree-utils.ts</span>      <span class="note">← computeTreeStats(), getStageBadge()</span><br>
+│   ├── <span class="file">mood.ts</span>            <span class="note">← MOOD_OPTIONS, getMoodOption()</span><br>
+│   ├── <span class="file">ritual.ts</span>          <span class="note">← getDailyPrompt(), getTodayKey()</span><br>
+│   ├── <span class="file">companion-bond.ts</span>  <span class="note">← computeBondXP(), getBondLevel()</span><br>
+│   ├── <span class="file">weather.ts</span>         <span class="note">← useWeather() hook, WEATHER_ICON</span><br>
+│   ├── <span class="file">seasons.ts</span>         <span class="note">← getCurrentSeason()</span><br>
+│   ├── <span class="file">badges.ts</span>          <span class="note">← Badge definitions + computeBadges()</span><br>
+│   ├── <span class="file">presence.ts</span>        <span class="note">← Online/offline Firestore presence</span><br>
+│   ├── <span class="file">forest-toast.tsx</span>   <span class="note">← forestToast helpers (wraps react-hot-toast)</span><br>
+│   └── <span class="file">utils.ts</span>           <span class="note">← getChatId(), formatLastSeen() etc.</span><br>
+│<br>
+├── <span class="dir">hooks/</span>                  <span class="note">← Custom React hooks</span><br>
+│   ├── <span class="file">useMessages.ts</span><br>
+│   ├── <span class="file">useUnreadCount.ts</span><br>
+│   ├── <span class="file">useTyping.ts</span><br>
+│   └── <span class="file">useOnlineStatus.ts</span><br>
+│<br>
+├── <span class="dir">types/index.ts</span>          <span class="note">← All shared TypeScript types + Firestore schemas</span><br>
+├── <span class="dir">public/</span>                 <span class="note">← Static assets served as-is</span><br>
+│   ├── <span class="file">favicon.svg</span>        <span class="note">← Bark-ring tree cross-section icon</span><br>
+│   └── <span class="dir">internal/devguide.html</span> <span class="note">← This file!</span><br>
+├── <span class="file">next.config.ts</span>         <span class="note">← output: 'export', basePath, images</span><br>
+├── <span class="file">tailwind.config.ts</span>     <span class="note">← forest/gold/moss colour tokens, fonts</span><br>
+└── <span class="dir">.github/workflows/deploy.yml</span> <span class="note">← GitHub Actions → Pages</span>
+</div>
+</section>
+
+<!-- 4. ENV VARS -->
+<section id="env">
+<h2>4 · Environment Variables</h2>
+<p>All secrets live in <code>.env.local</code> (never committed to git). For production, they are stored as <strong>GitHub repository secrets</strong> and injected during the GitHub Actions build.</p>
+<table>
+  <tr><th>Variable</th><th>Where to get it</th><th>Required?</th></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_API_KEY</td><td>Firebase Console → Project Settings → Web app</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</td><td>Same as above</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_PROJECT_ID</td><td>Same as above</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</td><td>Same as above</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</td><td>Same as above</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_APP_ID</td><td>Same as above</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_FIREBASE_DATABASE_URL</td><td>Firebase Console → Realtime Database (used for presence)</td><td>✅ Yes</td></tr>
+  <tr><td>NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</td><td>Cloudinary Dashboard → Settings</td><td>⚠️ Optional (needed for image/video upload)</td></tr>
+  <tr><td>NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</td><td>Cloudinary → Settings → Upload Presets</td><td>⚠️ Optional</td></tr>
+  <tr><td>NEXT_PUBLIC_BASE_PATH</td><td>Set to <code>/Terra_Sylvan</code> for project GitHub Pages site</td><td>✅ Yes (auto-set by workflow)</td></tr>
+</table>
+<div class="callout callout-warn">
+  <strong>⚠️ Never commit .env.local</strong>
+  These keys are public-facing (NEXT_PUBLIC_*) so they will be visible in browser JS bundles. Protect your Firebase project using Firestore Security Rules and Firebase Auth domain restrictions.
+</div>
+</section>
+
+<!-- 5. AUTH -->
+<section id="auth">
+<h2>5 · Authentication</h2>
+
+<section id="auth-flow">
+<h3>5.1 Auth Flow</h3>
+<div class="flow">
+  <div class="flow-box">User visits site</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">onAuthStateChanged fires</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">user != null?</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">getDoc(users/{uid})</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">setProfile(data)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">Render app</div>
+</div>
+<p>If <code>user == null</code> the middleware or page-level guard redirects to <code>/login</code>. Every protected page calls <code>useAuth()</code> and checks for a valid profile.</p>
+</section>
+
+<section id="auth-context">
+<h3>5.2 AuthContext (lib/auth-context.tsx)</h3>
+<p>A React Context that wraps the entire app (mounted in <code>app/layout.tsx</code>). It exposes:</p>
+<table>
+  <tr><th>Property / Method</th><th>Type</th><th>What it does</th></tr>
+  <tr><td>user</td><td>Firebase User | null</td><td>Raw Firebase auth object (has .uid, .email, .displayName)</td></tr>
+  <tr><td>profile</td><td>UserProfile | null</td><td>Our extended profile from Firestore (has messageCount, treeType, etc.)</td></tr>
+  <tr><td>loading</td><td>boolean</td><td>True while Firebase Auth is initialising</td></tr>
+  <tr><td>signIn(email, pw)</td><td>async fn</td><td>signInWithEmailAndPassword</td></tr>
+  <tr><td>signUp(email, pw, username, displayName, treeType)</td><td>async fn</td><td>Creates Auth user + writes Firestore profile</td></tr>
+  <tr><td>signInWithGoogle()</td><td>async fn</td><td>Google OAuth popup; creates Firestore profile on first sign-in</td></tr>
+  <tr><td>logOut()</td><td>async fn</td><td>signOut() + clears local state</td></tr>
+  <tr><td>refreshProfile()</td><td>async fn</td><td>Re-fetches Firestore profile (call after settings save)</td></tr>
+</table>
+<pre><code><span class="cm">// How to use in any component:</span>
+<span class="kw">const</span> { user, profile, loading } = <span class="fn">useAuth</span>()
+<span class="kw">if</span> (loading) <span class="kw">return</span> <span class="kw">null</span>          <span class="cm">// wait for Firebase init</span>
+<span class="kw">if</span> (!user) router.<span class="fn">replace</span>(<span class="st">'/login'</span>) <span class="cm">// not logged in</span></code></pre>
+</section>
+</section>
+
+<!-- 6. FIRESTORE -->
+<section id="firestore">
+<h2>6 · Firestore Database</h2>
+
+<section id="schema">
+<h3>6.1 Collections &amp; Schema</h3>
+
+<h4>users/{uid}</h4>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td>uid</td><td>string</td><td>Firebase Auth UID (same as doc ID)</td></tr>
+  <tr><td>email</td><td>string</td><td>User's email address</td></tr>
+  <tr><td>username</td><td>string</td><td>Unique @handle (lowercase)</td></tr>
+  <tr><td>displayName</td><td>string</td><td>Public display name</td></tr>
+  <tr><td>photoURL</td><td>string | null</td><td>Cloudinary URL of profile picture</td></tr>
+  <tr><td>bio</td><td>string</td><td>Short bio text</td></tr>
+  <tr><td>status</td><td>string</td><td>Status message</td></tr>
+  <tr><td>treeType</td><td>TreeType</td><td>One of 44 tree species (e.g. "oak", "cherry")</td></tr>
+  <tr><td>createdAt</td><td>number</td><td>Unix timestamp of account creation</td></tr>
+  <tr><td>updatedAt</td><td>number</td><td>Last profile update timestamp</td></tr>
+  <tr><td>messageCount</td><td>number</td><td>Total text messages sent (drives leaf count)</td></tr>
+  <tr><td>imageCount</td><td>number</td><td>Total images sent (drives flower count)</td></tr>
+  <tr><td>videoCount</td><td>number</td><td>Total videos sent (drives fruit count)</td></tr>
+  <tr><td>connectionCount</td><td>number</td><td>Accepted friends (drives root count)</td></tr>
+  <tr><td>isOnline</td><td>boolean</td><td>Written by presence.ts via Realtime Database</td></tr>
+  <tr><td>lastSeen</td><td>number</td><td>Timestamp of last online</td></tr>
+  <tr><td>mood</td><td>MoodType?</td><td>"sunny" | "breezy" | "rainy" | "stormy" | "radiant"</td></tr>
+  <tr><td>moodSetAt</td><td>number?</td><td>When mood was last changed</td></tr>
+  <tr><td>lastRitual</td><td>string?</td><td>Date string "YYYY-MM-DD" of last completed ritual</td></tr>
+  <tr><td>animal</td><td>string?</td><td>"fox" | "owl" | "deer" | "rabbit" | "none"</td></tr>
+  <tr><td>seeds</td><td>number?</td><td>Seed coins received via gifting</td></tr>
+</table>
+
+<h4>users/{uid}/rituals/{date}</h4>
+<p>A subcollection — one doc per calendar day that the user completed a ritual.</p>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td>date</td><td>string</td><td>"YYYY-MM-DD"</td></tr>
+  <tr><td>prompt</td><td>string</td><td>The question shown that day</td></tr>
+  <tr><td>answer</td><td>string</td><td>User's written response</td></tr>
+  <tr><td>completedAt</td><td>number</td><td>Unix timestamp</td></tr>
+</table>
+
+<h4>chats/{chatId}</h4>
+<p>The <code>chatId</code> is produced by <code>getChatId(uid1, uid2)</code> — it sorts the two UIDs alphabetically and joins them with <code>_</code> so that the same pair always gets the same doc.</p>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td>participants</td><td>string[]</td><td>[uid1, uid2] — used for Firestore queries</td></tr>
+  <tr><td>lastMessage</td><td>string</td><td>Preview text of the latest message</td></tr>
+  <tr><td>lastMessageAt</td><td>number</td><td>Timestamp used for sorting chat list</td></tr>
+  <tr><td>lastMessageSenderId</td><td>string</td><td>Who sent the last message</td></tr>
+</table>
+
+<h4>chats/{chatId}/messages/{msgId}</h4>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td>senderId</td><td>string</td><td>UID of the sender</td></tr>
+  <tr><td>content</td><td>string</td><td>Text content (or description for media)</td></tr>
+  <tr><td>type</td><td>MessageType</td><td>"text" | "image" | "video" | "sticker" | "voice" | "emoji"</td></tr>
+  <tr><td>mediaURL</td><td>string | null</td><td>Cloudinary URL for image/video messages</td></tr>
+  <tr><td>timestamp</td><td>number</td><td>When the message was sent</td></tr>
+  <tr><td>status</td><td>string</td><td>"sent" | "delivered" | "read"</td></tr>
+  <tr><td>reactions</td><td>Record&lt;emoji, uid[]&gt;</td><td>e.g. { "❤️": ["uid1", "uid2"] }</td></tr>
+</table>
+
+<h4>connections/{uid}/list/{otherUid}</h4>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td>uid</td><td>string</td><td>The other person's UID</td></tr>
+  <tr><td>status</td><td>string</td><td>"pending" | "accepted" | "rejected"</td></tr>
+  <tr><td>connectedAt</td><td>number</td><td>When the request was sent/accepted</td></tr>
+  <tr><td>initiator</td><td>boolean</td><td>true if this user sent the request</td></tr>
+</table>
+</section>
+
+<section id="firestore-fns">
+<h3>6.2 Firestore Functions (lib/firestore.ts)</h3>
+<p>All database operations go through this file. Never call Firestore directly from a component.</p>
+<table>
+  <tr><th>Function</th><th>What it does</th></tr>
+  <tr><td>getUserProfile(uid)</td><td>Returns UserProfile or null for a given UID</td></tr>
+  <tr><td>updateUserProfile(uid, fields)</td><td>Partial update of displayName, bio, status, treeType, photoURL, animal</td></tr>
+  <tr><td>searchUsers(term, currentUid)</td><td>Username prefix search (Firestore range query)</td></tr>
+  <tr><td>getOrCreateChat(uid1, uid2)</td><td>Returns chatId, creating the chat doc if missing</td></tr>
+  <tr><td>sendMessage(chatId, senderId, content, type, mediaURL?, extra?)</td><td>Adds message doc + updates chat preview + increments user counter</td></tr>
+  <tr><td>subscribeMessages(chatId, cb)</td><td>Real-time listener — returns unsubscribe function</td></tr>
+  <tr><td>subscribeChats(uid, cb)</td><td>Real-time listener for all chats the user is in</td></tr>
+  <tr><td>sendFriendRequest(fromUid, toUid)</td><td>Writes pending connection docs on both sides</td></tr>
+  <tr><td>acceptFriendRequest(uid, friendUid)</td><td>Sets status to "accepted" + increments connectionCount on both</td></tr>
+  <tr><td>rejectFriendRequest(uid, friendUid)</td><td>Sets status to "rejected"</td></tr>
+  <tr><td>toggleReaction(chatId, msgId, emoji, uid)</td><td>Adds/removes uid from the emoji array in reactions map</td></tr>
+  <tr><td>saveRitual(uid, date, prompt, answer)</td><td>Writes to rituals subcollection + sets lastRitual on user</td></tr>
+  <tr><td>getRitual(uid, date)</td><td>Returns the user's answer for a given date or null</td></tr>
+  <tr><td>saveMood(uid, mood)</td><td>Updates mood + moodSetAt on user doc</td></tr>
+  <tr><td>getMediaByUser(uid, type)</td><td>Fetches all image or video messages sent by a user (no composite index needed)</td></tr>
+  <tr><td>subscribeConnections(uid, cb)</td><td>Real-time listener for the user's connection list</td></tr>
+  <tr><td>getAllUsers()</td><td><em>Admin only</em> — fetches all user docs sorted by createdAt desc</td></tr>
+  <tr><td>deleteUserProfile(uid)</td><td><em>Admin only</em> — deletes a user's Firestore doc</td></tr>
+</table>
+</section>
+</section>
+
+<!-- 7. ROUTING -->
+<section id="routing">
+<h2>7 · Routing &amp; Pages</h2>
+<p>Next.js App Router uses the file system. Every <code>page.tsx</code> file = one URL. The two route groups <code>(auth)</code> and <code>(main)</code> are just folder organisation — the parentheses mean they don't appear in the URL.</p>
+<table>
+  <tr><th>URL</th><th>File</th><th>Notes</th></tr>
+  <tr><td>/login</td><td>app/(auth)/login/page.tsx</td><td>Public — redirects to /dashboard if logged in</td></tr>
+  <tr><td>/register</td><td>app/(auth)/register/page.tsx</td><td>Public</td></tr>
+  <tr><td>/dashboard</td><td>app/(main)/dashboard/page.tsx</td><td>Main tree view, HUD, nav, dock</td></tr>
+  <tr><td>/chat</td><td>app/(main)/chat/page.tsx</td><td>Chat list + ChatWindow, URL param: ?with=uid</td></tr>
+  <tr><td>/contacts</td><td>app/(main)/contacts/page.tsx</td><td>Friend list + Root Network SVG graph</td></tr>
+  <tr><td>/forest</td><td>app/(main)/forest/page.tsx</td><td>Community forest list</td></tr>
+  <tr><td>/forest/[communityId]</td><td>app/(main)/forest/[communityId]/page.tsx</td><td>Single community + GroupChat</td></tr>
+  <tr><td>/settings</td><td>app/(main)/settings/page.tsx</td><td>Edit profile, change tree type, photo upload</td></tr>
+  <tr><td>/admin</td><td>app/(main)/admin/page.tsx</td><td>Admin only — email check on every render</td></tr>
+</table>
+<div class="callout callout-info">
+  <strong>ℹ️ GitHub Pages base path</strong>
+  Because the site is hosted at <code>github.io/Terra_Sylvan/</code> (not the root), Next.js has <code>basePath: process.env.NEXT_PUBLIC_BASE_PATH</code> in <code>next.config.ts</code>. All internal <code>&lt;Link href="..."&gt;</code> calls automatically prepend this — you never add it manually.
+</div>
+</section>
+
+<!-- 8. SCENE -->
+<section id="scene">
+<h2>8 · 3D Scene Architecture</h2>
+
+<section id="treescene">
+<h3>8.1 The Lazy-Loader Pattern</h3>
+<p>React Three Fiber uses browser APIs that don't exist on the server (WebGL, AudioContext). Next.js renders components on the server by default. To prevent crashes, the 3D canvas is <strong>never imported at the top level</strong>.</p>
+<pre><code><span class="cm">// TreeScene.tsx — safe wrapper</span>
+<span class="kw">export default function</span> <span class="fn">TreeScene</span>(props) {
+  <span class="kw">const</span> [Scene, setScene] = <span class="fn">useState</span>(<span class="kw">null</span>)
+
+  <span class="fn">useEffect</span>(() => {
+    <span class="cm">// Dynamic import runs ONLY in the browser</span>
+    <span class="fn">import</span>(<span class="st">'./TreeSceneCanvas'</span>).<span class="fn">then</span>(mod => <span class="fn">setScene</span>(() => mod.default))
+  }, [])
+
+  <span class="kw">if</span> (!Scene) <span class="kw">return</span> &lt;LoadingSpinner /&gt;
+  <span class="kw">return</span> &lt;Scene {...props} /&gt;
+}</code></pre>
+<p>The dashboard also wraps this in Next.js <code>dynamic()</code> with <code>ssr: false</code> as a second layer of protection.</p>
+</section>
+
+<section id="tree">
+<h3>8.2 Tree Geometry (components/3d/Tree.tsx)</h3>
+<p>Every tree type maps to a family (deciduous, conical, bamboo, palm, etc.) which picks a geometry builder function. The tree's <strong>visual scale</strong> comes from <code>computeTreeStats()</code>.</p>
+
+<div class="flow">
+  <div class="flow-box">UserProfile stats</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">computeTreeStats(profile)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">TreeStats { scale, leafCount, flowerCount, fruitCount, rootCount, stage }</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">Tree.tsx renders geometry at that scale</div>
+</div>
+
+<pre><code><span class="cm">// lib/tree-utils.ts — growth formula</span>
+<span class="kw">export function</span> <span class="fn">computeTreeStats</span>(profile): <span class="ty">TreeStats</span> {
+  <span class="kw">const</span> ageInDays = Math.<span class="fn">floor</span>((Date.<span class="fn">now</span>() - profile.createdAt) / <span class="nu">86_400_000</span>)
+  <span class="kw">const</span> scale = <span class="nu">0.5</span> +
+    (profile.messageCount    / <span class="nu">50</span>)  * <span class="nu">0.4</span> +
+    (profile.imageCount      / <span class="nu">20</span>)  * <span class="nu">0.3</span> +
+    (profile.connectionCount / <span class="nu">10</span>)  * <span class="nu">0.3</span> +
+    (ageInDays               / <span class="nu">90</span>)  * <span class="nu">0.3</span>
+  <span class="cm">// stage: seedling → sapling → young → mature → ancient</span>
+  <span class="kw">return</span> { ageInDays, scale, leafCount, flowerCount, fruitCount, rootCount, stage }
+}</code></pre>
+
+<h4>Deciduous crown profiles</h4>
+<ul>
+  <li><strong>WIDE</strong> (oak, beech, elm, cork_oak, carob, seagrape, buttonwood) — flat spreading crown, 4 lobes</li>
+  <li><strong>TALL</strong> (maple, linden, teak, rubber_tree) — tall oval, lobes stacked vertically</li>
+  <li><strong>FLUFFY</strong> (cherry, sea_hibiscus) — 7-puff blossom cloud, flowers forced</li>
+  <li><strong>GNARLED</strong> (olive_tree, strangler_fig) — 3 irregular spheres, semi-transparent</li>
+</ul>
+</section>
+
+<section id="weather">
+<h3>8.3 Weather &amp; Sky (lib/weather.ts, components/3d/DynamicSky.tsx)</h3>
+<p>The sky condition comes from two sources and is merged in <code>TreeSceneCanvas</code>:</p>
+<ol>
+  <li><strong>Real weather</strong> — <code>useWeather()</code> fetches from <code>open-meteo.com</code> using browser geolocation. Returns <code>WeatherCondition</code> ("clear" | "partly_cloudy" | "rain" | "storm" | "snow" | "fog").</li>
+  <li><strong>Mood override</strong> — if the user has set a mood, <code>moodOption.weather</code> overrides the real condition. Passed as <code>weatherOverride</code> prop down through TreeScene → TreeSceneCanvas → DynamicSky.</li>
+</ol>
+<pre><code><span class="cm">// In dashboard/page.tsx</span>
+<span class="kw">const</span> moodOption = mood ? <span class="fn">getMoodOption</span>(mood) : <span class="kw">null</span>
+<span class="kw">const</span> weatherOverride: <span class="ty">WeatherCondition</span> | <span class="ty">undefined</span> = moodOption?.weather
+<span class="cm">// Passed as prop → overrides real weather in the 3D sky</span></code></pre>
+</section>
+
+<section id="animals">
+<h3>8.4 Animal Companions (components/3d/AnimalCompanion.tsx)</h3>
+<p>An animal companion sits near the tree base. It is selected in Settings and stored in the <code>animal</code> field on the user doc. The bond level adds a coloured point-light glow around the animal.</p>
+<table>
+  <tr><th>Animal</th><th>Rendered as</th></tr>
+  <tr><td>fox</td><td>Orange capsule body + triangle ears</td></tr>
+  <tr><td>owl</td><td>Grey sphere + horn bumps, rotates head</td></tr>
+  <tr><td>deer</td><td>Tan capsule + thin cylinder antlers</td></tr>
+  <tr><td>rabbit</td><td>White sphere + tall cylinder ears, hops</td></tr>
+  <tr><td>none</td><td>Nothing rendered</td></tr>
+</table>
+</section>
+</section>
+
+<!-- 9. CHAT -->
+<section id="chat">
+<h2>9 · Chat System</h2>
+<p>The chat is real-time via Firestore <code>onSnapshot()</code>. There is no WebSocket server — Firestore handles the streaming.</p>
+<div class="flow">
+  <div class="flow-box">User types message</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">sendMessage() in firestore.ts</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">addDoc to chats/{id}/messages</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">updateDoc chat preview</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">increment user counters</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">Other user's onSnapshot fires → UI updates</div>
+</div>
+
+<h3>Message types</h3>
+<table>
+  <tr><th>type</th><th>content field</th><th>mediaURL field</th></tr>
+  <tr><td>text</td><td>The message text</td><td>null</td></tr>
+  <tr><td>image</td><td>Caption or ""</td><td>Cloudinary image URL</td></tr>
+  <tr><td>video</td><td>Caption or ""</td><td>Cloudinary video URL</td></tr>
+  <tr><td>sticker</td><td>Sticker ID string</td><td>null</td></tr>
+  <tr><td>voice</td><td>Duration in seconds</td><td>Cloudinary audio URL</td></tr>
+  <tr><td>emoji</td><td>Emoji character(s)</td><td>null</td></tr>
+</table>
+
+<div class="callout callout-tip">
+  <strong>💡 How image/video upload works</strong>
+  MessageInput.tsx calls Cloudinary's unsigned upload API directly from the browser. The Cloudinary cloud name and upload preset come from env vars. The returned URL is then stored in Firestore. This means there is NO server-side upload processing.
+</div>
+</section>
+
+<!-- 10. RITUAL -->
+<section id="ritual">
+<h2>10 · Daily Growth Ritual</h2>
+<p>A once-per-day journaling prompt that appears automatically 1.8 seconds after the dashboard loads (if not yet completed today).</p>
+
+<h3>How the prompt rotates</h3>
+<pre><code><span class="cm">// lib/ritual.ts</span>
+<span class="kw">const</span> DAY_INDEX = Math.<span class="fn">floor</span>(Date.<span class="fn">now</span>() / <span class="nu">86_400_000</span>)
+<span class="kw">const</span> prompt = PROMPTS[DAY_INDEX % PROMPTS.length]
+<span class="cm">// 30 prompts cycle, so the same prompt repeats every 30 days</span></code></pre>
+
+<h3>Storage</h3>
+<p>On submit, <code>saveRitual(uid, date, prompt, answer)</code> writes to <code>users/{uid}/rituals/{YYYY-MM-DD}</code> and sets <code>lastRitual</code> on the user doc. On mount, <code>getRitual(uid, today)</code> checks if the doc exists — if yes, the modal doesn't auto-open.</p>
+</section>
+
+<!-- 11. MEMORY RINGS -->
+<section id="rings">
+<h2>11 · Memory Rings</h2>
+<p>A modal showing a top-down SVG cross-section of the tree trunk. Each concentric ring represents one week of account age. Milestone emoji dots mark significant events (first message, first photo, first connection, etc.).</p>
+<pre><code><span class="cm">// components/dashboard/MemoryRings.tsx</span>
+<span class="kw">const</span> ringCount = Math.<span class="fn">min</span>(<span class="nu">18</span>, Math.<span class="fn">floor</span>(stats.ageInDays / <span class="nu">7</span>))
+<span class="cm">// Each ring is 8px wider than the last</span>
+<span class="cm">// Colour shifts from amber (young) to deep green (mature)</span>
+<span class="cm">// Milestones are placed at specific ring/angle intersections</span></code></pre>
+</section>
+
+<!-- 12. BOND -->
+<section id="bond">
+<h2>12 · Companion Bond Level</h2>
+<p>The bond level (0-4) is computed entirely from profile stats — no separate Firestore field needed.</p>
+<pre><code><span class="cm">// lib/companion-bond.ts</span>
+<span class="kw">export function</span> <span class="fn">computeBondXP</span>(profile) {
+  <span class="kw">return</span> profile.messageCount    * <span class="nu">2</span>
+       + profile.imageCount       * <span class="nu">5</span>
+       + profile.connectionCount  * <span class="nu">15</span>
+       + (profile.seeds ?? <span class="nu">0</span>)   * <span class="nu">3</span>
+       + (profile.lastRitual ? <span class="nu">50</span> : <span class="nu">0</span>)
+}</code></pre>
+<table>
+  <tr><th>Level</th><th>Tier</th><th>XP threshold</th><th>Glow colour</th></tr>
+  <tr><td>0</td><td>Stranger</td><td>0</td><td>none</td></tr>
+  <tr><td>1</td><td>Awakening</td><td>100</td><td>#86efac (soft green)</td></tr>
+  <tr><td>2</td><td>Bonded</td><td>350</td><td>#fbbf24 (amber)</td></tr>
+  <tr><td>3</td><td>Close</td><td>800</td><td>#c084fc (violet)</td></tr>
+  <tr><td>4</td><td>Soulmate</td><td>1800</td><td>#f472b6 (pink)</td></tr>
+</table>
+</section>
+
+<!-- 13. MOOD -->
+<section id="mood">
+<h2>13 · Mood Weather</h2>
+<p>The user picks a mood from the <strong>MoodPicker</strong> dropdown in the nav. This writes to Firestore (<code>saveMood(uid, mood)</code>) and locally changes the 3D sky via the <code>weatherOverride</code> prop chain.</p>
+<table>
+  <tr><th>Mood</th><th>Emoji</th><th>Sky condition</th></tr>
+  <tr><td>sunny</td><td>☀️</td><td>clear</td></tr>
+  <tr><td>breezy</td><td>🌬️</td><td>partly_cloudy</td></tr>
+  <tr><td>rainy</td><td>🌧️</td><td>rain</td></tr>
+  <tr><td>stormy</td><td>⛈️</td><td>storm</td></tr>
+  <tr><td>radiant</td><td>✨</td><td>clear (with extra brightness)</td></tr>
+</table>
+</section>
+
+<!-- 14. RADIO -->
+<section id="radio">
+<h2>14 · Forest Radio</h2>
+<p>The Forest Radio (<code>components/audio/ForestRadio.tsx</code>) generates all audio <strong>procedurally</strong> in the browser using the Web Audio API. There are no MP3 files or streaming URLs.</p>
+<table>
+  <tr><th>Station</th><th>How it's generated</th></tr>
+  <tr><td>Rain Forest</td><td>Brown noise via buffer + lowpass filter + slow LFO for thunder</td></tr>
+  <tr><td>Midnight Crickets</td><td>5 sine oscillators at 4200-5000 Hz modulated at 18-22 Hz</td></tr>
+  <tr><td>Mountain Wind</td><td>White noise through bandpass filter + tremolo LFO</td></tr>
+  <tr><td>Campfire</td><td>Sparse random buffer (crackle) + sawtooth sub-bass</td></tr>
+  <tr><td>Tidal Mangrove</td><td>Brown noise + lowpass + slow frequency LFO (wave rhythm)</td></tr>
+</table>
+<div class="callout callout-warn">
+  <strong>⚠️ Browser autoplay policy</strong>
+  AudioContext requires a user gesture before starting. The radio only creates the AudioContext when the user clicks a station button, which satisfies this requirement.
+</div>
+</section>
+
+<!-- 15. STORIES -->
+<section id="stories">
+<h2>15 · Stories</h2>
+<p>Stories work like Instagram Stories — they are visible for 24 hours. They require Cloudinary for image uploads. If Cloudinary env vars are not set, the camera/upload button is disabled.</p>
+<p>Stories are stored in Firestore under a <code>stories</code> collection (not in user subcollections). The <code>StoriesBar</code> component queries stories from the user's accepted connections and displays them in a horizontal scroll strip below the nav.</p>
+</section>
+
+<!-- 16. COMMUNITY -->
+<section id="community">
+<h2>16 · Community Forest</h2>
+<p>A Community Forest is a group space with a shared chat. Any user can create one by choosing a biome type and name. The community doc lives in the <code>communities</code> collection; membership in <code>communities/{id}/members/{uid}</code>.</p>
+<p>The <code>GroupChat</code> component is a mini version of <code>ChatWindow</code> that writes to <code>communities/{id}/messages</code>. It includes a Forest Oracle feature that calls an AI endpoint (if configured) for wisdom prompts.</p>
+</section>
+
+<!-- 17. COMPONENTS -->
+<section id="components">
+<h2>17 · Component Library</h2>
+<h3>components/ui/ — reusable primitives</h3>
+<table>
+  <tr><th>Component</th><th>Props</th><th>Description</th></tr>
+  <tr><td>Button</td><td>variant, size, loading, fullWidth</td><td>Styled button with loading spinner, uses clsx for class merging</td></tr>
+  <tr><td>Input</td><td>label, error, icon</td><td>Labelled text input with error state</td></tr>
+  <tr><td>Avatar</td><td>src, name, size</td><td>Circular avatar with fallback initial letter</td></tr>
+  <tr><td>ForestToast</td><td>(used internally by forestToast)</td><td>Custom toast card with 11 variants</td></tr>
+</table>
+<h3>components/icons/</h3>
+<table>
+  <tr><th>Component</th><th>Props</th><th>Description</th></tr>
+  <tr><td>TreeRingIcon</td><td>size, rings, className</td><td>SVG bark cross-section — concentric growth rings with heartwood pith</td></tr>
+</table>
+</section>
+
+<!-- 18. TOASTS -->
+<section id="toasts">
+<h2>18 · Notification System</h2>
+<p>All notifications go through <code>lib/forest-toast.tsx</code> → <code>components/ui/ForestToast.tsx</code>. Never call <code>toast()</code> directly from react-hot-toast in new code.</p>
+<pre><code><span class="cm">// Import the helper</span>
+<span class="kw">import</span> { forestToast } <span class="kw">from</span> <span class="st">'@/lib/forest-toast'</span>
+
+<span class="cm">// Use the right variant for context:</span>
+forestToast.<span class="fn">growth</span>(<span class="st">'Your tree levelled up!'</span>)     <span class="cm">// 🌳</span>
+forestToast.<span class="fn">ritual</span>(<span class="st">'Ritual complete!'</span>)            <span class="cm">// 🌿</span>
+forestToast.<span class="fn">mood</span>(<span class="st">'Mood set to Breezy'</span>)           <span class="cm">// 🌤</span>
+forestToast.<span class="fn">message</span>(<span class="st">'New message from Aria'</span>)       <span class="cm">// 🍃</span>
+forestToast.<span class="fn">connect</span>(<span class="st">'Aria joined your roots!'</span>)    <span class="cm">// roots SVG</span>
+forestToast.<span class="fn">seed</span>(<span class="st">'You received 5 seeds'</span>)          <span class="cm">// 🌱</span>
+forestToast.<span class="fn">badge</span>(<span class="st">'New badge: Ancient'</span>)            <span class="cm">// 🏅</span>
+forestToast.<span class="fn">error</span>(<span class="st">'Upload failed'</span>, <span class="st">'Check connection'</span>) <span class="cm">// ⚠ triangle</span>
+forestToast.<span class="fn">info</span>(<span class="st">'See you in the forest.'</span>)         <span class="cm">// ℹ circle</span></code></pre>
+<div class="callout callout-alert">
+  <strong>🚫 Common mistake to avoid</strong>
+  If both <code>lib/forest-toast.ts</code> and <code>lib/forest-toast.tsx</code> exist, TypeScript will resolve to the <code>.ts</code> file first. This breaks notifications because the <code>.ts</code> version used <code>require()</code> which Turbopack doesn't support. Only <code>forest-toast.tsx</code> should exist.
+</div>
+</section>
+
+<!-- 19. CSS -->
+<section id="css">
+<h2>19 · CSS &amp; Styling</h2>
+<p>Two sources of styles:</p>
+<ol>
+  <li><strong>Tailwind classes</strong> — most component styling. Extended with custom colour tokens in <code>tailwind.config.ts</code>.</li>
+  <li><strong>app/globals.css</strong> — named utility classes used by many components.</li>
+</ol>
+<h3>Custom colour palette (Tailwind)</h3>
+<table>
+  <tr><th>Prefix</th><th>Range</th><th>Usage</th></tr>
+  <tr><td>forest-</td><td>100–950</td><td>Main green scale — backgrounds, borders, text</td></tr>
+  <tr><td>gold-</td><td>100–900</td><td>Amber/gold accents — rituals, bond levels</td></tr>
+  <tr><td>moss-</td><td>200–900</td><td>Darker olive-green for borders</td></tr>
+</table>
+<h3>Named CSS classes in globals.css</h3>
+<table>
+  <tr><th>Class</th><th>Used on</th></tr>
+  <tr><td>.glass</td><td>Modal panels, profile card</td></tr>
+  <tr><td>.nav-glass</td><td>Top navigation bar</td></tr>
+  <tr><td>.bottom-dock</td><td>Bottom icon navigation</td></tr>
+  <tr><td>.stat-pill</td><td>HUD stat counters (🍃🌸🍎🌿)</td></tr>
+  <tr><td>.tree-badge</td><td>Stage badge, time-of-day, season chips</td></tr>
+  <tr><td>.ritual-card</td><td>Daily ritual modal background</td></tr>
+  <tr><td>.bond-badge</td><td>Bond tier label (Awakening, Bonded…)</td></tr>
+  <tr><td>.bioluminescent *</td><td>Applied to scene-wrapper when bioMode is active — makes all glass panels glow green</td></tr>
+  <tr><td>.season-{spring|summer|autumn|winter} *</td><td>Subtle seasonal tinting of dock/nav borders</td></tr>
+  <tr><td>.sticker-{animation}</td><td>CSS animations for sticker messages</td></tr>
+</table>
+</section>
+
+<!-- 20. ADMIN -->
+<section id="admin">
+<h2>20 · Admin Panel</h2>
+<p>The admin panel is at <code>/admin</code>. It checks <code>user.email === 'roy62125@gmail.com'</code> on every render and redirects anyone else to <code>/dashboard</code>. The shield icon in the dashboard nav is also conditionally shown only for that email.</p>
+<div class="callout callout-warn">
+  <strong>⚠️ Client-side security only</strong>
+  The email check runs in the browser. The URL itself is technically accessible to anyone who knows it. To fully protect data, your Firestore Security Rules should also restrict the <code>getAllUsers()</code> query to only allow reads when the requester's email matches the admin email. Use <code>request.auth.token.email</code> in your rules.
+</div>
+<h3>What the admin panel shows</h3>
+<ul>
+  <li>Total member count, message count, media count, online count</li>
+  <li>Searchable + sortable table of all users</li>
+  <li>Per-user: avatar, email, tree type, growth stage, activity pills, join date, usage bars</li>
+  <li>Delete button → confirmation modal → removes Firestore user doc</li>
+</ul>
+<div class="callout callout-info">
+  <strong>ℹ️ Firebase Auth vs Firestore profile</strong>
+  Deleting a user's Firestore doc removes their profile and prevents them from using the app. Their Firebase Auth account (the login itself) remains. Full deletion of Auth accounts requires the Firebase Admin SDK on a server — not possible in a static export.
+</div>
+</section>
+
+<!-- 21. DEPLOY -->
+<section id="deploy">
+<h2>21 · Deployment Pipeline</h2>
+<p>Every <code>git push origin main</code> triggers the workflow at <code>.github/workflows/deploy.yml</code>.</p>
+<div class="flow">
+  <div class="flow-box">git push main</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">GitHub Actions starts</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">npm ci --legacy-peer-deps</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">npm run build (next build)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">./out/ created</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">upload-pages-artifact</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">deploy-pages</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box">Live at github.io/Terra_Sylvan</div>
+</div>
+<p>The build injects all secrets as environment variables (injected from GitHub repo secrets). The output is a folder of static HTML/JS/CSS files — no Node.js server needed at runtime.</p>
+<div class="callout callout-tip">
+  <strong>💡 Check build status</strong>
+  Go to your GitHub repo → Actions tab → latest workflow run. If it shows a red ✗, click it and expand the "Build static export" step to see the error.
+</div>
+</section>
+
+<!-- 22. ADD FEATURE -->
+<section id="add-feature">
+<h2>22 · How to Add a New Feature</h2>
+<p>Here is the step-by-step checklist for adding any new feature to Terra Sylvan:</p>
+<ol>
+  <li><strong>Define the data shape</strong> — if the feature needs new Firestore fields, add them to <code>types/index.ts</code> first.</li>
+  <li><strong>Write Firestore functions</strong> — add <code>getSomething()</code> / <code>saveSomething()</code> to <code>lib/firestore.ts</code>.</li>
+  <li><strong>Write the component</strong> — add it to the right <code>components/</code> subfolder. If it needs auth, call <code>useAuth()</code>. Mark it <code>'use client'</code> at the top.</li>
+  <li><strong>Add it to a page</strong> — import and render it in the correct <code>app/(main)/*/page.tsx</code>.</li>
+  <li><strong>Add notifications</strong> — use <code>forestToast.growth()</code> / <code>forestToast.error()</code> etc., never bare <code>toast()</code>.</li>
+  <li><strong>Run TypeScript check</strong> — <code>npx tsc --noEmit</code>. Fix any errors before pushing.</li>
+  <li><strong>Push</strong> — <code>git add . && git commit -m "feat: ..." && git push origin main</code>.</li>
+</ol>
+
+<h3>Example: adding a new mood option</h3>
+<pre><code><span class="cm">// 1. lib/mood.ts — add to MOOD_OPTIONS array</span>
+{ type: <span class="st">'foggy'</span>, emoji: <span class="st">'🌫️'</span>, label: <span class="st">'Foggy'</span>, hint: <span class="st">'Drifting through thoughts'</span>,
+  weather: <span class="st">'fog'</span>, accent: <span class="st">'#94a3b8'</span> }
+
+<span class="cm">// 2. lib/mood.ts — update MoodType union</span>
+<span class="kw">type</span> <span class="ty">MoodType</span> = <span class="st">'sunny'</span> | <span class="st">'breezy'</span> | <span class="st">'rainy'</span> | <span class="st">'stormy'</span> | <span class="st">'radiant'</span> | <span class="st">'foggy'</span>
+
+<span class="cm">// 3. No other files need changing — MoodPicker reads MOOD_OPTIONS automatically</span></code></pre>
+</section>
+
+<!-- 23. DEBUG -->
+<section id="debug">
+<h2>23 · Debugging Tips</h2>
+
+<h3>Site not updating after push</h3>
+<ul>
+  <li>Check GitHub → Actions tab for a red build. Click it and expand the failing step.</li>
+  <li>Common cause: TypeScript error in a new file. Run <code>npx tsc --noEmit</code> locally first.</li>
+  <li>Another common cause: <code>export const dynamic = "force-static"</code> missing on image-response routes.</li>
+</ul>
+
+<h3>Notifications not showing</h3>
+<ul>
+  <li>Ensure only <code>lib/forest-toast.tsx</code> exists — if <code>lib/forest-toast.ts</code> also exists, TypeScript resolves to the wrong file and <code>require()</code> breaks under Turbopack.</li>
+  <li>Check browser console for "require is not defined" errors.</li>
+</ul>
+
+<h3>3D scene blank / crashes</h3>
+<ul>
+  <li>Check if the import is wrapped in a dynamic import with <code>ssr: false</code>.</li>
+  <li>Three.js errors often appear in the browser console (not Next.js server logs) — open DevTools.</li>
+</ul>
+
+<h3>Firestore permission denied</h3>
+<ul>
+  <li>Open Firebase Console → Firestore → Rules tab.</li>
+  <li>The rules must allow the operation you're trying to do. During development you can temporarily use <code>allow read, write: if request.auth != null;</code>.</li>
+  <li>For production, tighten rules to only allow users to read/write their own data.</li>
+</ul>
+
+<h3>Admin panel shows no users</h3>
+<ul>
+  <li>Your Firestore rules probably don't allow reading all user docs. Add a rule: <code>allow read: if request.auth.token.email == 'roy62125@gmail.com';</code> on the <code>users</code> collection.</li>
+</ul>
+
+<h3>Images/videos not uploading</h3>
+<ul>
+  <li>Check that <code>NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> and <code>NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> are set in both <code>.env.local</code> (local dev) and GitHub Secrets (production).</li>
+  <li>The upload preset must be <strong>unsigned</strong> in Cloudinary settings.</li>
+</ul>
+
+<div class="callout callout-tip">
+  <strong>💡 Quick local dev setup</strong>
+  <br>1. Copy <code>.env.local.example</code> → <code>.env.local</code> and fill in values<br>
+  2. <code>npm install --legacy-peer-deps</code><br>
+  3. <code>npm run dev</code> → opens <code>localhost:3000</code>
+</div>
+</section>
+
+<div style="margin-top:64px; padding-top:32px; border-top:1px solid var(--border); text-align:center;">
+  <p style="color:var(--text3); font-size:12px;">Terra Sylvan Developer Guide · Built for the Forest Warden · 2026</p>
+  <p style="color:var(--text3); font-size:11px; margin-top:4px;">🌳 Where Connections Grow</p>
+</div>
+
+</main>
+
+<script>
+// Highlight active nav item on scroll
+const sections = document.querySelectorAll('section[id]')
+const navItems = document.querySelectorAll('.nav-item, .nav-sub')
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navItems.forEach(item => {
+        item.classList.remove('active')
+        if (item.getAttribute('href') === '#' + entry.target.id) {
+          item.classList.add('active')
+        }
+      })
+    }
+  })
+}, { rootMargin: '-20% 0px -70% 0px' })
+
+sections.forEach(s => observer.observe(s))
+</script>
+</body>
+</html>

@@ -279,7 +279,9 @@ export default function DashboardPage() {
         </div>
 
         {badges.length > 0 && (
-          <BadgeDisplay badgeIds={badges} compact maxShow={5} />
+          <div className="pointer-events-auto">
+            <BadgeDisplay badgeIds={badges} compact maxShow={5} />
+          </div>
         )}
       </div>
 

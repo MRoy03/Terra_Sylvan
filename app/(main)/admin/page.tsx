@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, Trash2, RefreshCw, Users, MessageSquare, Image, Video, TreePine, X, AlertTriangle, Search } from 'lucide-react'
+import { Shield, Trash2, RefreshCw, Users, MessageSquare, Image, Video, TreePine, X, AlertTriangle, Search, BookOpen } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { getAllUsers, deleteUserProfile } from '@/lib/firestore'
 import { computeTreeStats } from '@/lib/tree-utils'
@@ -205,6 +205,16 @@ export default function AdminPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <a
+            href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/internal/devguide.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] border
+                       border-amber-900/50 text-amber-600 hover:text-amber-400 hover:border-amber-700/60 transition-colors"
+          >
+            <BookOpen size={12} />
+            Dev Guide
+          </a>
           <button
             onClick={loadUsers}
             disabled={fetching}

@@ -50,12 +50,13 @@ export function DailyRitual({ uid, onComplete }: DailyRitualProps) {
   if (!open) {
     return (
       <button
-        onClick={() => !done && setOpen(true)}
-        title={done ? 'Ritual complete today' : 'Daily growth ritual'}
+        onClick={done ? undefined : () => setOpen(true)}
+        disabled={done}
+        title={done ? 'Ritual complete for today' : 'Daily growth ritual — click to reflect'}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border backdrop-blur-md transition-all
           ${done
-            ? 'bg-forest-800/30 border-forest-700/30 text-forest-500 cursor-default'
-            : 'bg-amber-900/30 border-amber-700/40 text-amber-300 hover:bg-amber-800/40 cursor-pointer'
+            ? 'bg-forest-800/30 border-forest-700/30 text-forest-600 cursor-default opacity-60'
+            : 'bg-amber-900/30 border-amber-700/40 text-amber-300 hover:bg-amber-800/40 cursor-pointer hover:border-amber-600/60'
           }`}
       >
         <Leaf size={11} className={done ? 'text-forest-600' : 'text-amber-400'} />
