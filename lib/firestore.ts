@@ -1,5 +1,5 @@
 import {
-  doc, getDoc, setDoc, updateDoc, addDoc,
+  doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc,
   collection, collectionGroup, query, where, getDocs,
   increment, onSnapshot, orderBy, limit,
   QuerySnapshot, DocumentData,
@@ -216,4 +216,16 @@ export function subscribeConnections(
   return onSnapshot(collection(db, 'connections', uid, 'list'), (snap) => {
     cb(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as Connection))
   })
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export async function getAllUsers(): Promise<UserProfile[]> {
+  const snap = await getDocs(collection(db, 'users'))
+  return snap.docs
+    .map((d) => d.data() as UserProfile)
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+}
+
+export async function deleteUserProfile(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid))
 }

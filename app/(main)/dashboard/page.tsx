@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Network } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Network, Shield } from 'lucide-react'
 import { forestToast } from '@/lib/forest-toast'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
@@ -199,6 +199,13 @@ export default function DashboardPage() {
               <Settings size={16} />
             </Button>
           </Link>
+          {user?.email === 'roy62125@gmail.com' && (
+            <Link href="/admin" title="Admin panel">
+              <Button variant="ghost" size="sm" className="text-amber-700 hover:text-amber-400">
+                <Shield size={15} />
+              </Button>
+            </Link>
+          )}
           <Button variant="ghost" size="sm" onClick={handleLogout} loading={signingOut} title="Sign out">
             <LogOut size={16} />
           </Button>
