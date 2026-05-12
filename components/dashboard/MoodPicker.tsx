@@ -33,7 +33,10 @@ export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) 
   }
 
   const handleClear = async () => {
-    if (!currentMood) { setOpen(false); return }
+    if (currentMood === null || currentMood === undefined) {
+      setOpen(false)
+      return
+    }
     setSaving(true)
     try {
       await clearMood(uid)
@@ -73,28 +76,34 @@ export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) 
                 How are you feeling?
               </p>
 
-              {/* Clear / Real weather option */}
-              <button
-                onClick={handleClear}
-                disabled={saving}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all mb-1
-                  border-b border-forest-900/60 pb-2.5 mb-2.5
-                  ${!currentMood
-                    ? 'bg-forest-800/40 text-forest-300'
-                    : 'text-forest-500 hover:bg-forest-900/50 hover:text-forest-200'
-                  }`}
-              >
-                <span className="text-lg leading-none">🌤</span>
-                <div className="text-left">
-                  <p className="text-xs font-medium leading-none">Real weather</p>
-                  <p className="text-[10px] text-forest-600 mt-0.5">
-                    {currentMood ? 'Clear mood override' : 'Active — no override'}
-                  </p>
-                </div>
-                {!currentMood && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-forest-400" />
+              {/* Real weather / Clear mood */}
+              <div className="pb-2 mb-2 border-b border-forest-900/60">
+                {currentMood ? (
+                  <button
+                    onClick={handleClear}
+                    disabled={saving}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all
+                      bg-red-950/40 border border-red-900/40 text-red-400
+                      hover:bg-red-900/50 hover:text-red-300 hover:border-red-700/50"
+                  >
+                    <span className="text-lg leading-none">🌤</span>
+                    <div className="text-left">
+                      <p className="text-xs font-medium leading-none">Clear mood</p>
+                      <p className="text-[10px] text-red-600/80 mt-0.5">Restore real weather</p>
+                    </div>
+                    <span className="ml-auto text-[9px] text-red-600 font-medium">× Reset</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-forest-800/30 border border-forest-700/30">
+                    <span className="text-lg leading-none">🌤</span>
+                    <div className="text-left">
+                      <p className="text-xs font-medium leading-none text-forest-300">Real weather</p>
+                      <p className="text-[10px] text-forest-600 mt-0.5">Active — no mood override</p>
+                    </div>
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-forest-400" />
+                  </div>
                 )}
-              </button>
+              </div>
 
               <div className="flex flex-col gap-1">
                 {MOOD_OPTIONS.map(opt => (

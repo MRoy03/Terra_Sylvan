@@ -403,6 +403,17 @@ body::after {
   animation: shimmer 2s infinite linear;
 }
 
+/* ── Firefly pulse — blue sent-status indicator ──────────────────────────── */
+@keyframes ts-firefly {
+  0%,100% { opacity: 1;    filter: drop-shadow(0 0 2px #60a5fa99); }
+  40%     { opacity: 0.35; filter: drop-shadow(0 0 0px transparent); }
+  70%     { opacity: 0.85; filter: drop-shadow(0 0 4px #60a5fa); }
+}
+.ts-firefly {
+  animation: ts-firefly 2.4s ease-in-out infinite;
+  display: inline-block;
+}
+
 /* ── Bond level badge ────────────────────────────────────────────────────── */
 .bond-badge {
   display:       inline-flex;

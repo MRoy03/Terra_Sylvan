@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { clsx } from 'clsx'
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -29,6 +30,7 @@ const dotMap: Record<Size, string> = {
 }
 
 export function Avatar({ photoURL, displayName, size = 'md', isOnline, className }: AvatarProps) {
+  const [imgError, setImgError] = useState(false)
   const initial = (displayName?.[0] ?? '?').toUpperCase()
 
   return (
@@ -37,8 +39,16 @@ export function Avatar({ photoURL, displayName, size = 'md', isOnline, className
         'rounded-full bg-forest-800 border-2 border-forest-700 flex items-center justify-center overflow-hidden font-bold text-forest-300',
         sizeMap[size],
       )}>
-        {photoURL
-          ? <img src={photoURL} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        {photoURL && !imgError
+          ? (
+            <img
+              src={photoURL}
+              alt={displayName}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              onError={() => setImgError(true)}
+            />
+          )
           : <span>{initial}</span>
         }
       </div>

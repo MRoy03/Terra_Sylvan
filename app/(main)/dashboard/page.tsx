@@ -89,7 +89,8 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if ((profile as any)?.mood) setMood((profile as any).mood as MoodType)
+    const m = (profile as any)?.mood
+    setMood(m && typeof m === 'string' && m.length > 0 ? m as MoodType : null)
   }, [profile])
 
   useEffect(() => {

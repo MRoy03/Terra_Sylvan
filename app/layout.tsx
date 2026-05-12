@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Cormorant_Garamond } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/lib/auth-context'
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import './globals.css'
 
 const inter     = Inter({ subsets: ['latin'], variable: '--font-inter',     display: 'swap' })
@@ -50,14 +51,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line react/no-danger */}
         <script dangerouslySetInnerHTML={{ __html: spaRoutingScript }} />
         <AuthProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
           <Toaster
             position="top-right"
             toastOptions={{
               style: {
-                background:   '#0e1f10',
-                color:        '#dcfce7',
-                border:       '1px solid rgba(134,239,172,0.2)',
+                background:   'var(--th-bg-card, #0e1f10)',
+                color:        'var(--th-text, #dcfce7)',
+                border:       '1px solid var(--th-border, rgba(134,239,172,0.2))',
                 borderRadius: '14px',
                 fontSize:     '13px',
                 fontFamily:   'var(--font-inter)',

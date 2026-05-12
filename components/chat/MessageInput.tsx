@@ -6,7 +6,7 @@ import { EmojiPanel } from './EmojiPanel'
 import { uploadMedia, isCloudinaryConfigured } from '@/lib/cloudinary'
 import { forestToast } from '@/lib/forest-toast'
 
-type InputMode = 'text' | 'whisper' | 'leaf'
+type InputMode = 'text' | 'whisper' | 'leaf' | 'viewonce'
 
 interface MessageInputProps {
   onSend:       (content: string, type?: 'text' | 'image' | 'video' | 'sticker', mediaURL?: string, extra?: Record<string, unknown>) => Promise<void>
@@ -31,8 +31,9 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
     setSending(true)
     try {
       const extra: Record<string, unknown> = {}
-      if (inputMode === 'whisper') extra.whisper = true
-      if (inputMode === 'leaf')    extra.leaf    = true
+      if (inputMode === 'whisper')  extra.whisper  = true
+      if (inputMode === 'leaf')     extra.leaf     = true
+      if (inputMode === 'viewonce') extra.viewOnce = true
       await onSend(trimmed, 'text', undefined, extra)
       setText('')
       setInputMode('text')
@@ -81,9 +82,10 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
   }
 
   const modeStyle: Record<InputMode, string> = {
-    text:    'bg-forest-900/60 border-forest-800/50',
-    whisper: 'bg-forest-900/80 border-forest-400/60',
-    leaf:    'bg-forest-800/60 border-green-600/60',
+    text:     'bg-forest-900/60 border-forest-800/50',
+    whisper:  'bg-forest-900/80 border-forest-400/60',
+    leaf:     'bg-forest-800/60 border-green-600/60',
+    viewonce: 'bg-forest-900/80 border-orange-500/50',
   }
 
   return (
@@ -110,7 +112,9 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
       {inputMode !== 'text' && (
         <div className="absolute bottom-full left-3 mb-1 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium
           bg-forest-900/90 border border-forest-700/50 text-forest-300 z-10">
-          {inputMode === 'whisper' ? <><Wind size={10}/> Whisper</> : <><Leaf size={10}/> Leaf</>}
+          {inputMode === 'whisper'  ? <><Wind size={10}/> Whisper</>   :
+           inputMode === 'leaf'     ? <><Leaf size={10}/> Leaf</>      :
+           <><span className="text-base leading-none">🔥</span> View once</>}
           <button onClick={() => setInputMode('text')} className="ml-0.5 text-forest-600 hover:text-forest-400">✕</button>
         </div>
       )}
@@ -134,6 +138,12 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
             ${inputMode === 'leaf' ? 'text-green-400 bg-forest-800/60' : 'text-forest-600 hover:text-forest-400'}`}>
           <Leaf size={18} />
         </button>
+        <button onClick={() => setInputMode(m => m === 'viewonce' ? 'text' : 'viewonce')} disabled={disabled}
+          title="View once — vanishes after recipient reads it"
+          className={`flex-shrink-0 p-2 rounded-xl transition-colors text-base leading-none
+            ${inputMode === 'viewonce' ? 'bg-orange-950/60 opacity-100' : 'opacity-50 hover:opacity-80'}`}>
+          🔥
+        </button>
 
         <button onClick={() => fileRef.current?.click()} disabled={disabled || uploading}
           className="flex-shrink-0 p-2 rounded-xl text-forest-500 hover:text-forest-300 transition-colors" title="Attach image or video">
@@ -148,8 +158,9 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
           onKeyDown={handleKeyDown}
           disabled={disabled || uploading}
           placeholder={
-            inputMode === 'whisper' ? '🌬️ Whisper…' :
-            inputMode === 'leaf'    ? '🍃 Write on a leaf…' :
+            inputMode === 'whisper'  ? '🌬️ Whisper…'         :
+            inputMode === 'leaf'     ? '🍃 Write on a leaf…' :
+            inputMode === 'viewonce' ? '🔥 View-once message…' :
             'Type a message…'
           }
           rows={1}

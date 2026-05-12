@@ -3,21 +3,28 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, LogIn } from 'lucide-react'
+import { Mail, Lock, LogIn, Eye, EyeOff, RotateCcw } from 'lucide-react'
 import { forestToast } from '@/lib/forest-toast'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 
 export function LoginForm() {
   const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
 
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [gLoading, setGLoading] = useState(false)
-  const [errors,   setErrors]   = useState<{ email?: string; password?: string }>({})
+  const [email,        setEmail]        = useState('')
+  const [password,     setPassword]     = useState('')
+  const [showPwd,      setShowPwd]      = useState(false)
+  const [loading,      setLoading]      = useState(false)
+  const [gLoading,     setGLoading]     = useState(false)
+  const [resetMode,    setResetMode]    = useState(false)
+  const [resetEmail,   setResetEmail]   = useState('')
+  const [resetSent,    setResetSent]    = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [errors,       setErrors]       = useState<{ email?: string; password?: string }>({})
 
   const validate = () => {
     const e: typeof errors = {}
@@ -37,10 +44,11 @@ export function LoginForm() {
       router.push('/dashboard')
     } catch (err: any) {
       const msg =
-        err.code === 'auth/user-not-found'   ? 'No account found with this email.' :
-        err.code === 'auth/wrong-password'   ? 'Incorrect password.' :
-        err.code === 'auth/invalid-email'    ? 'Invalid email address.' :
-        err.code === 'auth/too-many-requests'? 'Too many attempts. Try again later.' :
+        err.code === 'auth/user-not-found'     ? 'No account found with this email.' :
+        err.code === 'auth/wrong-password'     ? 'Incorrect password.' :
+        err.code === 'auth/invalid-credential' ? 'Invalid email or password.' :
+        err.code === 'auth/invalid-email'      ? 'Invalid email address.' :
+        err.code === 'auth/too-many-requests'  ? 'Too many attempts. Try again later.' :
         'Sign-in failed. Please try again.'
       forestToast.error(msg)
     } finally {
@@ -61,18 +69,90 @@ export function LoginForm() {
     }
   }
 
+  const handleReset = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    if (!resetEmail) return
+    setResetLoading(true)
+    try {
+      await sendPasswordResetEmail(auth, resetEmail)
+      setResetSent(true)
+    } catch (err: any) {
+      const msg =
+        err.code === 'auth/user-not-found' ? 'No account found with this email.' :
+        err.code === 'auth/invalid-email'  ? 'Invalid email address.' :
+        'Could not send reset email. Try again.'
+      forestToast.error(msg)
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  // ── Reset password panel ─────────────────────────────────────────────────────
+  if (resetMode) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <div className="backdrop-blur-xl bg-forest-950/70 border border-forest-800/50 rounded-3xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-3">🌿</div>
+            <h1 className="text-2xl font-bold text-white">Reset Password</h1>
+            <p className="text-forest-400 mt-1 text-sm">We'll send a reset link to your inbox</p>
+          </div>
+
+          {resetSent ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <span className="text-5xl animate-float">📬</span>
+              <p className="text-forest-300 text-center text-sm leading-relaxed">
+                A reset link was sent to <strong className="text-white">{resetEmail}</strong>.
+                <br />Check your inbox (and spam folder).
+              </p>
+              <button
+                onClick={() => { setResetMode(false); setResetSent(false) }}
+                className="mt-3 px-5 py-2 rounded-full border border-forest-700/50 text-forest-400
+                           hover:text-forest-200 hover:border-forest-500/60 text-sm transition-colors"
+              >
+                ← Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleReset} className="flex flex-col gap-4">
+              <Input
+                label="Email address"
+                type="email"
+                placeholder="you@example.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                icon={<Mail size={16} />}
+                autoComplete="email"
+              />
+              <Button type="submit" size="lg" fullWidth loading={resetLoading}>
+                <RotateCcw size={16} />
+                Send Reset Link
+              </Button>
+              <button
+                type="button"
+                onClick={() => setResetMode(false)}
+                className="text-forest-600 hover:text-forest-400 text-sm text-center transition-colors mt-1"
+              >
+                ← Back to sign in
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Main sign-in view ────────────────────────────────────────────────────────
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="backdrop-blur-xl bg-forest-950/70 border border-forest-800/50 rounded-3xl p-8 shadow-2xl">
 
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🌳</div>
           <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
           <p className="text-forest-400 mt-1 text-sm">Return to your Terra Sylvan forest</p>
         </div>
 
-        {/* Google */}
         <Button variant="google" size="lg" fullWidth loading={gLoading} onClick={handleGoogle} className="mb-6">
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -89,7 +169,6 @@ export function LoginForm() {
           <div className="flex-1 h-px bg-forest-800" />
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
             label="Email"
@@ -101,18 +180,41 @@ export function LoginForm() {
             icon={<Mail size={16} />}
             autoComplete="email"
           />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            error={errors.password}
-            icon={<Lock size={16} />}
-            autoComplete="current-password"
-          />
 
-          <Button type="submit" size="lg" fullWidth loading={loading} className="mt-2">
+          {/* Password field with show/hide toggle */}
+          <div className="flex flex-col gap-1.5">
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPwd ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={errors.password}
+                icon={<Lock size={16} />}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(v => !v)}
+                className="absolute right-3 bottom-[11px] text-forest-500 hover:text-forest-300 transition-colors"
+                tabIndex={-1}
+                title={showPwd ? 'Hide password' : 'Show password'}
+              >
+                {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {/* Forgot password link */}
+            <button
+              type="button"
+              onClick={() => { setResetMode(true); setResetEmail(email) }}
+              className="self-end text-[11px] text-forest-600 hover:text-forest-400 transition-colors"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          <Button type="submit" size="lg" fullWidth loading={loading} className="mt-1">
             <LogIn size={18} />
             Sign In
           </Button>

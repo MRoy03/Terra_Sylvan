@@ -194,6 +194,13 @@ export async function clearMood(uid: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { mood: deleteField(), moodSetAt: deleteField() })
 }
 
+export async function markMessageViewed(chatId: string, messageId: string, uid: string): Promise<void> {
+  await updateDoc(doc(db, 'chats', chatId, 'messages', messageId), {
+    [`viewedBy.${uid}`]: true,
+    status: 'read',
+  })
+}
+
 export async function getMediaByUser(
   uid:  string,
   type: 'image' | 'video',
