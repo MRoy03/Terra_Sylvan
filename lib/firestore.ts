@@ -1,7 +1,7 @@
 import {
   doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc,
   collection, collectionGroup, query, where, getDocs,
-  increment, onSnapshot, orderBy, limit,
+  increment, onSnapshot, orderBy, limit, deleteField,
   QuerySnapshot, DocumentData,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -190,23 +190,32 @@ export async function saveMood(uid: string, mood: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { mood, moodSetAt: Date.now() })
 }
 
+export async function clearMood(uid: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { mood: deleteField(), moodSetAt: deleteField() })
+}
+
 export async function getMediaByUser(
   uid:  string,
   type: 'image' | 'video',
 ): Promise<{ url: string; timestamp: number }[]> {
-  // Single-field where clause — no composite index required
-  const q = query(
-    collectionGroup(db, 'messages'),
-    where('senderId', '==', uid),
-    limit(200),
-  )
-  const snap = await getDocs(q)
-  return snap.docs
-    .map(d => d.data())
-    .filter(d => d.type === type && !!d.mediaURL)
-    .map(d => ({ url: d.mediaURL as string, timestamp: d.timestamp as number }))
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 60)
+  try {
+    const q = query(
+      collectionGroup(db, 'messages'),
+      where('senderId', '==', uid),
+      limit(200),
+    )
+    const snap = await getDocs(q)
+    return snap.docs
+      .map(d => d.data())
+      .filter(d => d.type === type && !!d.mediaURL)
+      .map(d => ({ url: d.mediaURL as string, timestamp: d.timestamp as number }))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 60)
+  } catch (e: any) {
+    // Firestore collection-group index not configured yet — return empty silently
+    if (e?.code === 'failed-precondition' || e?.code === 'permission-denied') return []
+    throw e
+  }
 }
 
 export function subscribeConnections(

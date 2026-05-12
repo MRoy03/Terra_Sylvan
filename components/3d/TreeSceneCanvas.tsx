@@ -11,6 +11,7 @@ import { TreeStats, TreeType, BiomeType, TREE_BIOME_MAP } from '@/types'
 import { useWeather, WEATHER_ICON } from '@/lib/weather'
 import type { WeatherCondition } from '@/lib/weather'
 import { getCurrentSeason, SEASON_LABEL } from '@/lib/seasons'
+import { getPanoramaUrl, TIME_OVERLAYS, getTimeKey, BIOME_FOG } from '@/lib/panoramas'
 
 interface TreeSceneProps {
   stats:            TreeStats
@@ -22,6 +23,7 @@ interface TreeSceneProps {
   animal?:          AnimalType
   bondLevel?:       number
   weatherOverride?: WeatherCondition
+  showPhoto?:       boolean
 }
 
 // ─── Weather HUD ──────────────────────────────────────────────────────────────
@@ -127,17 +129,36 @@ function WeatherHUD({ treeType }: { treeType: TreeType }) {
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
-export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal, bondLevel = 0, weatherOverride }: TreeSceneProps) {
+export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal, bondLevel = 0, weatherOverride, showPhoto = true }: TreeSceneProps) {
   const biome = biomeType ?? TREE_BIOME_MAP[treeType] ?? 'temperate'
   const weather = useWeather()
   const condition = weatherOverride ?? weather.condition
+  const season      = getCurrentSeason()
+  const panoramaUrl = getPanoramaUrl(biome, season)
+  const timeKey     = getTimeKey(new Date().getHours())
+  const timeOverlay = TIME_OVERLAYS[timeKey]
+  const fogColor    = BIOME_FOG[biome] ?? '#0a1a08'
   const camDistance   = 4 + stats.scale * 4
 
   return (
-    <div className="w-full h-full relative">
-      <Canvas shadows gl={{ antialias: true, alpha: false }} dpr={[1, 2]} style={{ background: '#040910' }}>
+    <div
+      className="w-full h-full relative overflow-hidden"
+      style={{
+        backgroundImage: showPhoto && panoramaUrl ? `url(${panoramaUrl})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
+        backgroundColor: '#060f07',
+      }}
+    >
+      {/* Time-of-day colour grade over the photo */}
+      {showPhoto && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: timeOverlay, zIndex: 1 }} />
+      )}
+
+      <Canvas shadows gl={{ antialias: true, alpha: showPhoto }} dpr={[1, 2]}
+        style={{ background: 'transparent', position: 'relative', zIndex: 2 }}>
         <Suspense fallback={null}>
-          <DynamicSky weatherCondition={condition} biomeType={biome} />
+          <DynamicSky weatherCondition={condition} biomeType={biome} classicSky={!showPhoto} />
           <Ground biomeType={biome} />
           <Tree stats={stats} displayName={displayName} status={status} photoURL={photoURL} treeType={treeType} />
           {animal && animal !== 'none' && <AnimalCompanion type={animal} scale={stats.scale} bondLevel={bondLevel} />}
@@ -151,7 +172,7 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
             minDistance={3} maxDistance={25}
             autoRotate autoRotateSpeed={0.4} enableDamping dampingFactor={0.08} />
 
-          <fog attach="fog" args={['#0a1a08', 35, 120]} />
+          <fog attach="fog" args={[fogColor, 45, 130]} />
         </Suspense>
       </Canvas>
 

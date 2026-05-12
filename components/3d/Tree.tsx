@@ -10,6 +10,52 @@ import { getCurrentSeason, getSeasonLeafColor, hasSnowCap } from '@/lib/seasons'
 // Full-tree families render their own trunk from Y=0 — no separate cylinder
 const FULL_TREE: TreeFamily[] = ['bamboo', 'cactus', 'palm', 'banana', 'joshua', 'mangrove', 'shrub']
 
+// Canvas-generated bark texture — called once per tree, memoized
+function useBarkTexture(trunkColor: string) {
+  return useMemo(() => {
+    if (typeof document === 'undefined') return null
+    const canvas = document.createElement('canvas')
+    canvas.width = 128; canvas.height = 256
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = trunkColor
+    ctx.fillRect(0, 0, 128, 256)
+    // Vertical grain lines
+    for (let i = 0; i < 28; i++) {
+      const x = Math.random() * 128
+      const alpha = 0.07 + Math.random() * 0.14
+      ctx.fillStyle = Math.random() > 0.55
+        ? `rgba(255,210,160,${alpha})`
+        : `rgba(0,0,0,${alpha * 1.8})`
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      for (let y = 16; y <= 256; y += 16) ctx.lineTo(x + (Math.random() - 0.5) * 5, y)
+      ctx.lineTo(x + 1 + Math.random() * 2, 256)
+      ctx.lineTo(x - 0.5, 256)
+      ctx.closePath(); ctx.fill()
+    }
+    // Horizontal bark cracks
+    for (let i = 0; i < 7; i++) {
+      const y = Math.random() * 256
+      ctx.fillStyle = `rgba(0,0,0,${0.08 + Math.random() * 0.10})`
+      ctx.fillRect(0, y, 128, 1 + Math.random() * 1.5)
+    }
+    // Knots
+    for (let k = 0; k < 3; k++) {
+      const kx = 12 + Math.random() * 104, ky = 20 + Math.random() * 216
+      const kr = 5 + Math.random() * 9
+      const g = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr)
+      g.addColorStop(0, 'rgba(20,10,4,0.75)')
+      g.addColorStop(0.5, 'rgba(20,10,4,0.35)')
+      g.addColorStop(1, 'rgba(20,10,4,0)')
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(kx, ky, kr * 1.6, 0, Math.PI * 2); ctx.fill()
+    }
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+    tex.repeat.set(1, 2.5)
+    return tex
+  }, [trunkColor])
+}
+
 // ─── Shared instanced helpers ─────────────────────────────────────────────────
 function Leaves({ count, radius, color }: { count: number; radius: number; color: string }) {
   const ref = useRef<THREE.InstancedMesh>(null!)
@@ -128,35 +174,72 @@ function DeciduousCanopy({ s, c, stats, treeType, snow }: {
     : treeType === 'sea_hibiscus' ? '#f9c040'
     : '#fffacd'
 
+  // Derive anime-style canopy palette: shadow → mid → highlight
+  const base    = useMemo(() => new THREE.Color(c[0]), [c[0]])
+  const shadow1 = useMemo(() => `#${base.clone().multiplyScalar(0.42).getHexString()}`, [base])
+  const shadow2 = useMemo(() => `#${base.clone().multiplyScalar(0.58).getHexString()}`, [base])
+  const mid1    = c[0]
+  const mid2    = c[1]
+  const mid3    = c[2]
+  const hilite1 = useMemo(() => `#${new THREE.Color(c[1]).clone().multiplyScalar(1.28).getHexString()}`, [c[1]])
+  const hilite2 = useMemo(() => `#${new THREE.Color(c[2]).clone().multiplyScalar(1.45).getHexString()}`, [c[2]])
+
   // ── Wide spreading (oak, beech, elm, cork_oak, carob, seagrape, buttonwood) ──
   const WIDE = ['oak','beech','elm','cork_oak','carob','seagrape','buttonwood']
   if (WIDE.includes(treeType)) {
-    const r = 1.9 * s, off = r * 0.08
+    const r = 1.9 * s
     return (
       <group>
-        <mesh castShadow position={[0, off, 0]} scale={[1.25, 0.72, 1.1]}>
+        {/* Deep shadow interior */}
+        <mesh castShadow position={[0,  r * 0.05, 0]} scale={[1.0, 0.65, 0.9]}>
+          <sphereGeometry args={[r * 0.85, 10, 10]} />
+          <meshStandardMaterial color={shadow1} roughness={0.95} transparent opacity={0.92} />
+        </mesh>
+        <mesh castShadow position={[r * 0.55, -r * 0.18, r * 0.15]} scale={[0.9, 0.75, 0.85]}>
+          <sphereGeometry args={[r * 0.55, 8, 8]} />
+          <meshStandardMaterial color={shadow2} roughness={0.95} transparent opacity={0.88} />
+        </mesh>
+        {/* Main canopy masses */}
+        <mesh castShadow position={[0, r * 0.12, 0]} scale={[1.22, 0.72, 1.08]}>
           <sphereGeometry args={[r, 12, 12]} />
-          <meshStandardMaterial color={c[0]} roughness={0.88} />
+          <meshStandardMaterial color={mid1} roughness={0.88} />
         </mesh>
-        <mesh castShadow position={[r * 1.0, off - r * 0.12, r * 0.1]}>
-          <sphereGeometry args={[r * 0.6, 9, 9]} />
-          <meshStandardMaterial color={c[1]} roughness={0.88} />
+        <mesh castShadow position={[r * 1.02, r * 0.0, r * 0.1]}>
+          <sphereGeometry args={[r * 0.60, 9, 9]} />
+          <meshStandardMaterial color={mid2} roughness={0.88} />
         </mesh>
-        <mesh castShadow position={[-r * 0.95, off - r * 0.08, -r * 0.1]}>
+        <mesh castShadow position={[-r * 0.96, r * 0.06, -r * 0.1]}>
           <sphereGeometry args={[r * 0.58, 9, 9]} />
-          <meshStandardMaterial color={c[2]} roughness={0.88} />
+          <meshStandardMaterial color={mid3} roughness={0.88} />
         </mesh>
-        <mesh castShadow position={[r * 0.3, off - r * 0.15, r * 0.9]}>
-          <sphereGeometry args={[r * 0.52, 8, 8]} />
-          <meshStandardMaterial color={c[1]} roughness={0.88} />
+        <mesh castShadow position={[r * 0.32, r * 0.0, r * 0.92]}>
+          <sphereGeometry args={[r * 0.50, 8, 8]} />
+          <meshStandardMaterial color={mid2} roughness={0.88} />
         </mesh>
-        <group position={[0, off, 0]}>
-          <Leaves count={stats.leafCount} radius={r * 1.1} color={c[1]} />
+        <mesh castShadow position={[-r * 0.28, -r * 0.04, -r * 0.88]}>
+          <sphereGeometry args={[r * 0.46, 7, 7]} />
+          <meshStandardMaterial color={mid1} roughness={0.88} />
+        </mesh>
+        {/* Highlight crown — catches sunlight */}
+        <mesh castShadow position={[r * 0.22, r * 0.55, r * 0.18]}>
+          <sphereGeometry args={[r * 0.58, 9, 9]} />
+          <meshStandardMaterial color={hilite1} roughness={0.80} transparent opacity={0.90} />
+        </mesh>
+        <mesh castShadow position={[-r * 0.18, r * 0.62, -r * 0.12]}>
+          <sphereGeometry args={[r * 0.44, 8, 8]} />
+          <meshStandardMaterial color={hilite2} roughness={0.78} transparent opacity={0.85} />
+        </mesh>
+        <mesh castShadow position={[r * 0.52, r * 0.68, -r * 0.22]}>
+          <sphereGeometry args={[r * 0.36, 7, 7]} />
+          <meshStandardMaterial color={hilite2} roughness={0.75} transparent opacity={0.80} />
+        </mesh>
+        <group position={[0, r * 0.08, 0]}>
+          <Leaves count={stats.leafCount} radius={r * 1.1} color={mid2} />
           {stats.fruitCount  > 0 && <Fruits  count={stats.fruitCount}  radius={r} />}
           {stats.flowerCount > 0 && <Flowers count={stats.flowerCount} radius={r} color={flowerCol} />}
           {snow && (
             <mesh position={[0, r * 0.7, 0]}>
-              <sphereGeometry args={[r * 0.7, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <sphereGeometry args={[r * 0.72, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
               <meshStandardMaterial color="#eaf4fb" roughness={0.4} />
             </mesh>
           )}
@@ -171,29 +254,44 @@ function DeciduousCanopy({ s, c, stats, treeType, snow }: {
     const r = 1.4 * s, off = r * 0.6
     return (
       <group>
-        <mesh castShadow position={[0, off, 0]} scale={[0.85, 1.3, 0.85]}>
+        {/* Shadow depths */}
+        <mesh castShadow position={[0, off - r * 0.1, 0]} scale={[0.75, 1.1, 0.75]}>
+          <sphereGeometry args={[r * 0.82, 9, 9]} />
+          <meshStandardMaterial color={shadow1} roughness={0.95} transparent opacity={0.88} />
+        </mesh>
+        {/* Main masses */}
+        <mesh castShadow position={[0, off, 0]} scale={[0.85, 1.30, 0.85]}>
           <sphereGeometry args={[r, 12, 12]} />
-          <meshStandardMaterial color={c[0]} roughness={0.85} />
+          <meshStandardMaterial color={mid1} roughness={0.85} />
         </mesh>
-        <mesh castShadow position={[r * 0.5, off - r * 0.5, r * 0.2]}>
-          <sphereGeometry args={[r * 0.65, 9, 9]} />
-          <meshStandardMaterial color={c[1]} roughness={0.85} />
+        <mesh castShadow position={[r * 0.52, off - r * 0.50, r * 0.20]}>
+          <sphereGeometry args={[r * 0.64, 9, 9]} />
+          <meshStandardMaterial color={mid2} roughness={0.85} />
         </mesh>
-        <mesh castShadow position={[-r * 0.45, off - r * 0.45, -r * 0.15]}>
-          <sphereGeometry args={[r * 0.62, 9, 9]} />
-          <meshStandardMaterial color={c[2]} roughness={0.85} />
+        <mesh castShadow position={[-r * 0.46, off - r * 0.46, -r * 0.15]}>
+          <sphereGeometry args={[r * 0.61, 9, 9]} />
+          <meshStandardMaterial color={mid3} roughness={0.85} />
         </mesh>
-        <mesh castShadow position={[r * 0.1, off + r * 0.9, 0]}>
-          <sphereGeometry args={[r * 0.48, 8, 8]} />
-          <meshStandardMaterial color={c[0]} roughness={0.85} />
+        <mesh castShadow position={[-r * 0.38, off - r * 0.38, r * 0.56]}>
+          <sphereGeometry args={[r * 0.46, 7, 7]} />
+          <meshStandardMaterial color={mid2} roughness={0.85} />
+        </mesh>
+        {/* Highlight crown */}
+        <mesh castShadow position={[r * 0.12, off + r * 0.92, 0]}>
+          <sphereGeometry args={[r * 0.50, 8, 8]} />
+          <meshStandardMaterial color={hilite1} roughness={0.78} transparent opacity={0.88} />
+        </mesh>
+        <mesh castShadow position={[-r * 0.20, off + r * 1.05, r * 0.18]}>
+          <sphereGeometry args={[r * 0.36, 7, 7]} />
+          <meshStandardMaterial color={hilite2} roughness={0.75} transparent opacity={0.82} />
         </mesh>
         <group position={[0, off, 0]}>
-          <Leaves count={stats.leafCount} radius={r} color={c[2]} />
+          <Leaves count={stats.leafCount} radius={r} color={mid3} />
           {stats.fruitCount  > 0 && <Fruits  count={stats.fruitCount}  radius={r * 0.9} />}
-          {stats.flowerCount > 0 && <Flowers count={stats.flowerCount} radius={r} color={flowerCol} />}
+          {stats.flowerCount > 0 && <Flowers count={stats.flowerCount} radius={r}       color={flowerCol} />}
           {snow && (
             <mesh position={[0, r * 1.1, 0]}>
-              <sphereGeometry args={[r * 0.5, 9, 9, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <sphereGeometry args={[r * 0.52, 9, 9, 0, Math.PI * 2, 0, Math.PI / 2]} />
               <meshStandardMaterial color="#eaf4fb" roughness={0.4} />
             </mesh>
           )}
@@ -202,28 +300,30 @@ function DeciduousCanopy({ s, c, stats, treeType, snow }: {
     )
   }
 
-  // ── Fluffy blossom cloud (cherry, sea_hibiscus) ───────────────────────────
+  // ── Fluffy blossom cloud (cherry, sea_hibiscus) — keep but enrich ──────────
   if (treeType === 'cherry' || treeType === 'sea_hibiscus') {
     const r = 1.5 * s, off = r * 0.3
-    const puffs: [number, number, number, number][] = [
-      [0, off, 0, 1.0], [r * 0.7, off + r * 0.2, r * 0.2, 0.72],
-      [-r * 0.65, off + r * 0.15, -r * 0.1, 0.68],
-      [r * 0.25, off + r * 0.8, r * 0.3, 0.58],
-      [-r * 0.3, off + r * 0.7, -r * 0.25, 0.55],
-      [r * 0.5, off - r * 0.2, -r * 0.4, 0.5],
-      [-r * 0.45, off - r * 0.15, r * 0.5, 0.48],
+    const puffs: [number, number, number, number, string][] = [
+      [0,          off,          0,       1.00, mid1],
+      [r * 0.72,   off + r*0.22, r*0.22,  0.72, mid2],
+      [-r * 0.66,  off + r*0.16, -r*0.1,  0.68, mid1],
+      [r * 0.26,   off + r*0.82, r*0.32,  0.58, hilite1],
+      [-r * 0.30,  off + r*0.72, -r*0.26, 0.55, hilite1],
+      [r * 0.52,   off - r*0.22, -r*0.40, 0.50, shadow2],
+      [-r * 0.46,  off - r*0.16, r*0.52,  0.48, shadow2],
+      [-r * 0.15,  off + r*1.10, r*0.1,   0.42, hilite2],
     ]
     return (
       <group>
-        {puffs.map(([x, y, z, sc], i) => (
+        {puffs.map(([x, y, z, sc2, col], i) => (
           <mesh key={i} castShadow position={[x, y, z]}>
-            <sphereGeometry args={[r * sc, 9, 9]} />
-            <meshStandardMaterial color={i % 2 === 0 ? c[0] : c[1]} roughness={0.75} transparent opacity={0.92} />
+            <sphereGeometry args={[r * sc2, 9, 9]} />
+            <meshStandardMaterial color={col} roughness={0.75} transparent opacity={0.90} />
           </mesh>
         ))}
         <group position={[0, off, 0]}>
-          <Flowers count={Math.max(stats.flowerCount, 12)} radius={r * 1.2} color={c[0]} />
-          <Leaves count={stats.leafCount} radius={r} color={c[2]} />
+          <Flowers count={Math.max(stats.flowerCount, 14)} radius={r * 1.2} color={c[0]} />
+          <Leaves count={stats.leafCount} radius={r} color={mid3} />
         </group>
       </group>
     )
@@ -255,33 +355,48 @@ function DeciduousCanopy({ s, c, stats, treeType, snow }: {
     )
   }
 
-  // ── Default round crown (linden variant, remaining) ───────────────────────
-  const r = 1.55 * s, off = r * 0.3
+  // ── Default round crown ───────────────────────────────────────────────────
+  const r = 1.55 * s, off = r * 0.30
   return (
     <group>
+      {/* Shadows */}
+      <mesh castShadow position={[0, off - r * 0.08, 0]} scale={[0.9, 0.65, 0.9]}>
+        <sphereGeometry args={[r * 0.80, 9, 9]} />
+        <meshStandardMaterial color={shadow1} roughness={0.95} transparent opacity={0.85} />
+      </mesh>
+      {/* Main masses */}
       <mesh castShadow position={[0, off, 0]}>
         <sphereGeometry args={[r, 12, 12]} />
-        <meshStandardMaterial color={c[0]} roughness={0.85} />
+        <meshStandardMaterial color={mid1} roughness={0.85} />
       </mesh>
-      <mesh castShadow position={[r * 0.65, off - r * 0.3, r * 0.15]}>
+      <mesh castShadow position={[r * 0.65, off - r * 0.30, r * 0.15]}>
         <sphereGeometry args={[r * 0.72, 10, 10]} />
-        <meshStandardMaterial color={c[1]} roughness={0.85} />
+        <meshStandardMaterial color={mid2} roughness={0.85} />
       </mesh>
-      <mesh castShadow position={[-r * 0.55, off - r * 0.4, -r * 0.2]}>
+      <mesh castShadow position={[-r * 0.55, off - r * 0.38, -r * 0.20]}>
         <sphereGeometry args={[r * 0.68, 10, 10]} />
-        <meshStandardMaterial color={c[2]} roughness={0.85} />
+        <meshStandardMaterial color={mid3} roughness={0.85} />
       </mesh>
-      <mesh castShadow position={[r * 0.1, off + r * 0.7, r * 0.1]}>
-        <sphereGeometry args={[r * 0.5, 8, 8]} />
-        <meshStandardMaterial color={c[0]} roughness={0.85} />
+      <mesh castShadow position={[r * 0.35, off - r * 0.10, -r * 0.75]}>
+        <sphereGeometry args={[r * 0.50, 8, 8]} />
+        <meshStandardMaterial color={mid1} roughness={0.85} />
+      </mesh>
+      {/* Highlights */}
+      <mesh castShadow position={[r * 0.10, off + r * 0.70, r * 0.10]}>
+        <sphereGeometry args={[r * 0.52, 8, 8]} />
+        <meshStandardMaterial color={hilite1} roughness={0.78} transparent opacity={0.88} />
+      </mesh>
+      <mesh castShadow position={[-r * 0.22, off + r * 0.85, -r * 0.15]}>
+        <sphereGeometry args={[r * 0.38, 7, 7]} />
+        <meshStandardMaterial color={hilite2} roughness={0.75} transparent opacity={0.82} />
       </mesh>
       <group position={[0, off, 0]}>
-        <Leaves count={stats.leafCount} radius={r} color={c[1]} />
+        <Leaves count={stats.leafCount} radius={r} color={mid2} />
         {stats.fruitCount  > 0 && <Fruits  count={stats.fruitCount}  radius={r} />}
         {stats.flowerCount > 0 && <Flowers count={stats.flowerCount} radius={r} color={flowerCol} />}
         {snow && (
           <mesh position={[0, r * 0.9, 0]}>
-            <sphereGeometry args={[r * 0.6, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <sphereGeometry args={[r * 0.62, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <meshStandardMaterial color="#eaf4fb" roughness={0.4} />
           </mesh>
         )}
@@ -894,6 +1009,7 @@ export function Tree({ stats, displayName, status, photoURL, treeType }: TreePro
     () => [0, 72, 144, 216, 288].slice(0, Math.max(1, stats.rootCount)),
     [stats.rootCount],
   )
+  const barkTex = useBarkTexture(cfg.trunkColor)
 
   const showTrunk = !isFullTree
   const showRoots = !isFullTree && cfg.family !== 'birch' && cfg.family !== 'willow'
@@ -940,8 +1056,13 @@ export function Tree({ stats, displayName, status, photoURL, treeType }: TreePro
 
       {showTrunk && (
         <mesh castShadow position={[0, trunkH / 2, 0]}>
-          <cylinderGeometry args={[trunkR * 0.82, trunkR, trunkH, 10]} />
-          <meshStandardMaterial color={cfg.trunkColor} roughness={0.94} />
+          <cylinderGeometry args={[trunkR * 0.78, trunkR, trunkH, 12]} />
+          <meshStandardMaterial
+            color={cfg.trunkColor}
+            map={barkTex ?? undefined}
+            roughness={0.96}
+            envMapIntensity={0.15}
+          />
         </mesh>
       )}
 

@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Sky, Stars } from '@react-three/drei'
+import { Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import type { WeatherCondition } from '@/lib/weather'
 import type { BiomeType } from '@/types'
@@ -25,39 +25,59 @@ function getMoonPhase(): number {
 // ─── Visible Sun with glow corona ─────────────────────────────────────────────
 function CelestialSun({ position, phase }: { position: [number, number, number]; phase: string }) {
   if (position[1] < 3) return null
-  const isSunrise = phase === 'dawn'
-  const isSunset  = phase === 'dusk'
-  const coreColor  = isSunrise ? '#ffcc44' : isSunset ? '#ff7722' : '#fff8e0'
-  const glowColor  = isSunrise ? '#ff9933' : isSunset ? '#ff4400' : '#ffee88'
-  const r = (isSunrise || isSunset) ? 4.8 : 3.5
+  const isDawn   = phase === 'dawn'
+  const isDusk   = phase === 'dusk'
+  const coreCol  = isDawn ? '#ffe0a0' : isDusk ? '#ff8c40' : '#fff8e8'
+  const glowCol  = isDawn ? '#ff9933' : isDusk ? '#ff4400' : '#ffdd66'
+  const rayCol   = isDawn ? '#ff8820' : isDusk ? '#cc3300' : '#ffcc44'
+  const r        = (isDawn || isDusk) ? 5.5 : 3.8
+
+  const rays = useMemo(() => Array.from({ length: 12 }, (_, i) => ({
+    angle: (i / 12) * Math.PI * 2,
+    len: r * (1.8 + (i % 3) * 0.4),
+    w: 0.12 + (i % 2) * 0.06,
+  })), [r])
 
   return (
     <group position={position}>
-      {/* Far outer atmosphere haze */}
-      <mesh position={[0, 0, -0.4]}>
-        <circleGeometry args={[r * 4.5, 32]} />
-        <meshBasicMaterial color={glowColor} transparent opacity={0.04} depthWrite={false} />
+      {/* Wide diffuse atmosphere */}
+      <mesh position={[0, 0, -0.5]}>
+        <circleGeometry args={[r * 6, 32]} />
+        <meshBasicMaterial color={glowCol} transparent opacity={0.025} depthWrite={false} />
       </mesh>
-      {/* Outer glow ring */}
+      {/* Outer corona */}
+      <mesh position={[0, 0, -0.4]}>
+        <circleGeometry args={[r * 3.2, 32]} />
+        <meshBasicMaterial color={glowCol} transparent opacity={0.07} depthWrite={false} />
+      </mesh>
+      {/* Mid glow */}
       <mesh position={[0, 0, -0.3]}>
-        <circleGeometry args={[r * 2.8, 32]} />
-        <meshBasicMaterial color={glowColor} transparent opacity={0.10} depthWrite={false} />
+        <circleGeometry args={[r * 1.9, 32]} />
+        <meshBasicMaterial color={glowCol} transparent opacity={0.16} depthWrite={false} />
       </mesh>
       {/* Inner glow */}
       <mesh position={[0, 0, -0.2]}>
-        <circleGeometry args={[r * 1.7, 32]} />
-        <meshBasicMaterial color={glowColor} transparent opacity={0.22} depthWrite={false} />
+        <circleGeometry args={[r * 1.3, 32]} />
+        <meshBasicMaterial color={coreCol} transparent opacity={0.28} depthWrite={false} />
       </mesh>
-      {/* Core disc */}
+      {/* Solar disc */}
       <mesh position={[0, 0, -0.1]}>
-        <circleGeometry args={[r, 32]} />
-        <meshBasicMaterial color={coreColor} transparent opacity={0.97} depthWrite={false} />
+        <circleGeometry args={[r, 48]} />
+        <meshBasicMaterial color={coreCol} transparent opacity={0.96} depthWrite={false} />
       </mesh>
-      {/* Bright centre */}
+      {/* Bright limb centre */}
       <mesh>
-        <circleGeometry args={[r * 0.45, 24]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.9} depthWrite={false} />
+        <circleGeometry args={[r * 0.38, 24]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.88} depthWrite={false} />
       </mesh>
+      {/* Light rays */}
+      {rays.map((ray, i) => (
+        <mesh key={i} position={[0, 0, -0.15]}
+          rotation={[0, 0, ray.angle]}>
+          <planeGeometry args={[ray.w, ray.len]} />
+          <meshBasicMaterial color={rayCol} transparent opacity={0.06 + (i % 3) * 0.02} depthWrite={false} />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -65,95 +85,125 @@ function CelestialSun({ position, phase }: { position: [number, number, number];
 // ─── Moon with phase shadow + glow halo ───────────────────────────────────────
 function Moon({ position }: { position: [number, number, number] }) {
   const phase   = getMoonPhase()
-  const shadowX = Math.cos(phase * Math.PI * 2) * 3.6
-  const opacity = phase < 0.05 || phase > 0.95 ? 0.1 : 1.0
-  const moonR   = 3.8
+  const opacity = phase < 0.05 || phase > 0.95 ? 0.12 : 1.0
+  const moonR   = 4.2
+
+  // Canvas-generated moon surface texture with maria (lunar seas)
+  const moonTex = useMemo(() => {
+    const c2 = document.createElement('canvas')
+    c2.width = 256; c2.height = 256
+    const ctx2 = c2.getContext('2d')!
+    // Base warm-grey disc
+    const grad = ctx2.createRadialGradient(128, 118, 10, 128, 128, 128)
+    grad.addColorStop(0, '#f0ece0')
+    grad.addColorStop(0.6, '#d8d0c0')
+    grad.addColorStop(1, '#b0a890')
+    ctx2.fillStyle = grad; ctx2.beginPath(); ctx2.arc(128,128,126,0,Math.PI*2); ctx2.fill()
+    // Maria (dark regions) — simplified but recognizable
+    const maria = [
+      { x: 100, y: 90, rx: 38, ry: 28, a: -0.3, col: 'rgba(80,72,60,0.55)' },   // Mare Imbrium
+      { x: 150, y: 100, rx: 22, ry: 18, a: 0.2, col: 'rgba(70,65,55,0.50)' },   // Mare Serenitatis
+      { x: 160, y: 130, rx: 28, ry: 20, a: 0.1, col: 'rgba(75,68,58,0.45)' },   // Mare Tranquillitatis
+      { x: 100, y: 155, rx: 32, ry: 18, a: -0.2, col: 'rgba(68,62,52,0.40)' },  // Oceanus Procellarum
+      { x: 160, y: 160, rx: 18, ry: 14, a: 0.3, col: 'rgba(72,66,56,0.42)' },   // Mare Fecunditatis
+    ]
+    maria.forEach(m => {
+      ctx2.save(); ctx2.translate(m.x, m.y); ctx2.rotate(m.a)
+      ctx2.fillStyle = m.col
+      ctx2.beginPath(); ctx2.ellipse(0, 0, m.rx, m.ry, 0, 0, Math.PI*2); ctx2.fill()
+      ctx2.restore()
+    })
+    // Craters
+    const craters = [
+      {x:80,y:60,r:8},{x:185,y:75,r:6},{x:60,y:150,r:10},{x:195,y:170,r:7},
+      {x:128,y:200,r:9},{x:75,y:190,r:5},{x:210,y:120,r:5},{x:40,y:100,r:6},
+    ]
+    craters.forEach(cr => {
+      const cg = ctx2.createRadialGradient(cr.x-cr.r*0.2, cr.y-cr.r*0.2, 0, cr.x, cr.y, cr.r)
+      cg.addColorStop(0,'rgba(60,55,45,0.7)'); cg.addColorStop(0.7,'rgba(80,74,64,0.4)'); cg.addColorStop(1,'rgba(200,190,175,0.2)')
+      ctx2.fillStyle=cg; ctx2.beginPath(); ctx2.arc(cr.x,cr.y,cr.r,0,Math.PI*2); ctx2.fill()
+      ctx2.strokeStyle='rgba(220,210,195,0.5)'; ctx2.lineWidth=0.8
+      ctx2.beginPath(); ctx2.arc(cr.x,cr.y,cr.r,0,Math.PI*2); ctx2.stroke()
+    })
+    const tex = new THREE.CanvasTexture(c2)
+    return tex
+  }, [])
+
+  const shadowX = Math.cos(phase * Math.PI * 2) * (moonR * 1.05)
 
   return (
     <group position={position}>
       {/* Outer atmospheric glow */}
+      <mesh position={[0, 0, -0.4]}>
+        <circleGeometry args={[moonR * 3.5, 32]} />
+        <meshBasicMaterial color="#5060a0" transparent opacity={0.04} depthWrite={false} />
+      </mesh>
+      {/* Halo */}
       <mesh position={[0, 0, -0.3]}>
-        <circleGeometry args={[moonR * 3.0, 32]} />
-        <meshBasicMaterial color="#6878b0" transparent opacity={0.06} depthWrite={false} />
+        <circleGeometry args={[moonR * 2.0, 32]} />
+        <meshBasicMaterial color="#9aabce" transparent opacity={0.10} depthWrite={false} />
       </mesh>
       {/* Inner halo */}
       <mesh position={[0, 0, -0.2]}>
-        <circleGeometry args={[moonR * 1.8, 32]} />
-        <meshBasicMaterial color="#b0c0e0" transparent opacity={0.14} depthWrite={false} />
+        <circleGeometry args={[moonR * 1.35, 32]} />
+        <meshBasicMaterial color="#c8d8f0" transparent opacity={0.18} depthWrite={false} />
       </mesh>
-      {/* Moon disc */}
+      {/* Moon disc with surface texture */}
       <mesh position={[0, 0, -0.1]}>
-        <circleGeometry args={[moonR, 32]} />
-        <meshBasicMaterial color="#e8e2d4" transparent opacity={opacity} depthWrite={false} />
+        <circleGeometry args={[moonR, 48]} />
+        <meshBasicMaterial map={moonTex} transparent opacity={opacity} depthWrite={false} />
       </mesh>
-      {/* Crater texture suggestion */}
-      {opacity > 0.3 && (
-        <>
-          <mesh position={[-1.2, 0.8, 0.01]}>
-            <circleGeometry args={[0.55, 12]} />
-            <meshBasicMaterial color="#ccc0b0" transparent opacity={opacity * 0.4} depthWrite={false} />
-          </mesh>
-          <mesh position={[0.9, -0.5, 0.01]}>
-            <circleGeometry args={[0.35, 12]} />
-            <meshBasicMaterial color="#ccc0b0" transparent opacity={opacity * 0.35} depthWrite={false} />
-          </mesh>
-          <mesh position={[0.1, 1.2, 0.01]}>
-            <circleGeometry args={[0.25, 12]} />
-            <meshBasicMaterial color="#ccc0b0" transparent opacity={opacity * 0.3} depthWrite={false} />
-          </mesh>
-        </>
-      )}
       {/* Phase shadow overlay */}
       {opacity > 0.1 && phase < 0.95 && phase > 0.05 && (
-        <mesh position={[shadowX, 0, 0.02]}>
-          <circleGeometry args={[moonR * 1.03, 32]} />
-          <meshBasicMaterial color="#070b18" transparent
-            opacity={phase < 0.5 ? 0.92 - phase * 0.8 : 0.2 + (phase - 0.5) * 1.4}
-            depthWrite={false}
-          />
+        <mesh position={[shadowX, 0, 0.05]}>
+          <circleGeometry args={[moonR * 1.04, 40]} />
+          <meshBasicMaterial color="#03070f" transparent
+            opacity={phase < 0.5 ? 0.94 - phase * 0.82 : 0.18 + (phase - 0.5) * 1.45}
+            depthWrite={false} />
         </mesh>
       )}
     </group>
   )
 }
 
-// ─── Background Clouds (painted into sky at z=-130) ───────────────────────────
+// ─── Background Clouds (painted into sky at z=-135) ───────────────────────────
 function BackgroundClouds({ condition, isNight }: { condition: WeatherCondition; isNight: boolean }) {
-  const count = condition === 'clear' ? 0 : condition === 'partly_cloudy' ? 7 : 14
-
+  const count = condition === 'clear' ? 0 : condition === 'partly_cloudy' ? 5 : 11
   const clouds = useMemo(() => Array.from({ length: count }, (_, i) => ({
-    x: (i / Math.max(count, 1) - 0.5) * 300 + (Math.random() - 0.5) * 40,
-    y: 30 + Math.random() * 28,
-    scale: 8 + Math.random() * 14,
-    opacity: 0.55 + Math.random() * 0.3,
+    x:       (i / Math.max(count, 1) - 0.5) * 320 + (Math.random() - 0.5) * 50,
+    y:       32 + Math.random() * 22,
+    scale:   10 + Math.random() * 18,
+    opacity: 0.45 + Math.random() * 0.30,
+    rotZ:    (Math.random() - 0.5) * 0.15,
   })), [count])
-
   if (count === 0) return null
-  const topCol    = isNight ? '#3a4460' : '#e8f0ff'
-  const shadowCol = isNight ? '#1a2035' : '#b8c8e0'
+
+  const topCol    = isNight ? '#2a3350' : '#f5f8ff'
+  const litCol    = isNight ? '#3a4468' : '#ffffff'
+  const shadowCol = isNight ? '#151d30' : '#c8d8e8'
 
   return (
-    <group position={[0, 0, -130]}>
+    <group position={[0, 0, -135]}>
       {clouds.map((c, ci) => {
+        const s = c.scale
+        // 7-puff organic cloud shape
         const puffs = [
-          { dx: 0,             dy: c.scale * 0.2,  r: c.scale * 1.3 },
-          { dx: c.scale * 1.7, dy: 0,              r: c.scale * 1.0 },
-          { dx: -c.scale * 1.5, dy: 0,             r: c.scale * 0.9 },
-          { dx: c.scale * 0.8, dy: c.scale * 0.9,  r: c.scale * 0.7 },
-          { dx: -c.scale * 0.7, dy: c.scale * 0.8, r: c.scale * 0.6 },
+          { dx: 0,        dy: s * 0.28, r: s * 1.45, col: topCol,    op: c.opacity },
+          { dx:  s * 2.0, dy: 0,        r: s * 1.05, col: topCol,    op: c.opacity * 0.92 },
+          { dx: -s * 1.8, dy: 0,        r: s * 0.92, col: topCol,    op: c.opacity * 0.88 },
+          { dx:  s * 0.9, dy: s * 1.05, r: s * 0.78, col: litCol,    op: c.opacity * 0.80 },
+          { dx: -s * 0.8, dy: s * 0.95, r: s * 0.72, col: litCol,    op: c.opacity * 0.75 },
+          { dx:  s * 2.8, dy: -s * 0.1, r: s * 0.60, col: topCol,    op: c.opacity * 0.65 },
+          { dx: -s * 2.6, dy: -s * 0.1, r: s * 0.55, col: topCol,    op: c.opacity * 0.60 },
+          // Shadow underbelly
+          { dx:  s * 0.3, dy: -s * 0.1, r: s * 1.30, col: shadowCol, op: c.opacity * 0.35 },
         ]
         return (
-          <group key={ci} position={[c.x, c.y, 0]}>
+          <group key={ci} position={[c.x, c.y, 0]} rotation={[0, 0, c.rotZ]}>
             {puffs.map((p, pi) => (
-              <mesh key={`s${pi}`} position={[p.dx, p.dy - c.scale * 0.25, -0.1]}>
-                <circleGeometry args={[p.r * 0.9, 12]} />
-                <meshBasicMaterial color={shadowCol} transparent opacity={c.opacity * 0.35} depthWrite={false} />
-              </mesh>
-            ))}
-            {puffs.map((p, pi) => (
-              <mesh key={`t${pi}`} position={[p.dx, p.dy, 0]}>
-                <circleGeometry args={[p.r, 14]} />
-                <meshBasicMaterial color={topCol} transparent opacity={c.opacity} depthWrite={false} />
+              <mesh key={pi} position={[p.dx, p.dy, pi < 7 ? 0 : -0.2]}>
+                <circleGeometry args={[p.r, 18]} />
+                <meshBasicMaterial color={p.col} transparent opacity={p.op} depthWrite={false} />
               </mesh>
             ))}
           </group>
@@ -163,215 +213,8 @@ function BackgroundClouds({ condition, isNight }: { condition: WeatherCondition;
   )
 }
 
-// ─── Smooth mountain ridge geometry helper ────────────────────────────────────
-function useMountainGeo(ridgePoints: [number, number][], baseY = -15, width = 380) {
-  return useMemo(() => {
-    const sorted = [...ridgePoints].sort((a, b) => a[0] - b[0])
-    const shape  = new THREE.Shape()
-    shape.moveTo(-width / 2, baseY)
-    shape.lineTo(sorted[0][0], sorted[0][1])
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const p0  = i > 0 ? sorted[i - 1] : sorted[i]
-      const p1  = sorted[i]
-      const p2  = sorted[i + 1]
-      const p3  = i < sorted.length - 2 ? sorted[i + 2] : p2
-      const cp1x = p1[0] + (p2[0] - p0[0]) / 5
-      const cp1y = p1[1] + (p2[1] - p0[1]) / 5
-      const cp2x = p2[0] - (p3[0] - p1[0]) / 5
-      const cp2y = p2[1] - (p3[1] - p1[1]) / 5
-      shape.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2[0], p2[1])
-    }
-    shape.lineTo(width / 2, baseY)
-    shape.lineTo(width / 2, baseY - 60)
-    shape.lineTo(-width / 2, baseY - 60)
-    return new THREE.ShapeGeometry(shape, 40)
-  }, [ridgePoints, baseY, width])
-}
+// (Background scenery removed — replaced by photo panorama in TreeSceneCanvas)
 
-// ─── Per-biome ridge layer data ───────────────────────────────────────────────
-type RidgeLayer = {
-  z: number
-  y: number
-  color: string
-  points: [number, number][]
-  hazeColor?: string
-}
-
-const BIOME_LAYERS: Record<BiomeType, RidgeLayer[]> = {
-  temperate: [
-    {
-      z: -160, y: 2, color: '#0a1a0c', hazeColor: '#1a2a1a',
-      points: [[-180,0],[-120,42],[-70,55],[-20,38],[30,60],[80,45],[140,52],[180,38]],
-    },
-    {
-      z: -110, y: 0, color: '#0e2410', hazeColor: '#182818',
-      points: [[-180,0],[-130,30],[-75,42],[-25,28],[20,45],[75,32],[135,38],[180,25]],
-    },
-    {
-      z: -65, y: -1, color: '#122c14', hazeColor: '#1e3020',
-      points: [[-180,0],[-120,18],[-65,28],[-15,16],[25,32],[80,20],[130,24],[180,14]],
-    },
-    {
-      z: -30, y: -2, color: '#162e16',
-      points: [[-180,0],[-110,10],[-55,16],[-10,8],[30,18],[85,12],[140,14],[180,8]],
-    },
-  ],
-  mountain: [
-    {
-      z: -160, y: 4, color: '#0a0f18', hazeColor: '#10182a',
-      points: [[-180,0],[-110,60],[-70,82],[-30,55],[15,72],[60,88],[110,65],[160,70],[180,50]],
-    },
-    {
-      z: -110, y: 2, color: '#141e30', hazeColor: '#182234',
-      points: [[-180,0],[-115,40],[-75,58],[-35,35],[10,50],[65,62],[115,45],[165,48],[180,32]],
-    },
-    {
-      z: -65, y: 0, color: '#1a2838', hazeColor: '#1e2c3c',
-      points: [[-180,0],[-120,22],[-80,35],[-40,18],[5,28],[70,38],[120,26],[165,28],[180,18]],
-    },
-    {
-      z: -30, y: -1, color: '#0e1a14',
-      points: [[-180,0],[-110,10],[-60,16],[-20,8],[30,20],[90,13],[145,16],[180,8]],
-    },
-  ],
-  tropical: [
-    {
-      z: -160, y: 2, color: '#040e06', hazeColor: '#0a180a',
-      points: [[-180,0],[-120,50],[-65,65],[-15,42],[30,58],[85,50],[140,60],[180,45]],
-    },
-    {
-      z: -110, y: 0, color: '#081408', hazeColor: '#101c10',
-      points: [[-180,0],[-125,35],[-70,48],[-18,28],[25,42],[80,36],[138,44],[180,30]],
-    },
-    {
-      z: -65, y: -1, color: '#0c1e0c', hazeColor: '#162416',
-      points: [[-180,0],[-115,20],[-60,30],[-10,16],[28,28],[85,22],[140,26],[180,16]],
-    },
-    {
-      z: -30, y: -2, color: '#102414',
-      points: [[-180,0],[-108,10],[-50,16],[-5,8],[32,16],[88,12],[145,14],[180,8]],
-    },
-  ],
-  arid: [
-    {
-      z: -160, y: 2, color: '#150a05', hazeColor: '#201208',
-      points: [[-180,0],[-140,30],[-120,30],[-100,0],[-50,38],[-20,38],[10,0],[50,28],[80,28],[120,0],[155,22],[180,22]],
-    },
-    {
-      z: -110, y: 0, color: '#1e1008', hazeColor: '#28180c',
-      points: [[-180,0],[-145,20],[-125,20],[-105,0],[-55,26],[-25,26],[5,0],[45,18],[85,18],[125,0],[160,15],[180,15]],
-    },
-    {
-      z: -65, y: -1, color: '#28180c', hazeColor: '#301e10',
-      points: [[-180,0],[-120,10],[-60,14],[-10,8],[30,12],[85,9],[140,11],[180,6]],
-    },
-    {
-      z: -30, y: -2, color: '#1e1208',
-      points: [[-180,0],[-110,5],[-55,8],[-8,4],[32,6],[88,5],[145,7],[180,4]],
-    },
-  ],
-  mediterranean: [
-    {
-      z: -160, y: 1, color: '#100e08', hazeColor: '#1a1810',
-      points: [[-180,0],[-115,38],[-65,48],[-15,30],[25,42],[80,36],[140,44],[180,28]],
-    },
-    {
-      z: -110, y: 0, color: '#1a1810', hazeColor: '#221e14',
-      points: [[-180,0],[-120,25],[-68,32],[-18,18],[20,28],[78,24],[138,28],[180,16]],
-    },
-    {
-      z: -65, y: -1, color: '#221e14', hazeColor: '#282418',
-      points: [[-180,0],[-115,12],[-60,16],[-12,8],[25,14],[82,10],[140,12],[180,7]],
-    },
-    {
-      z: -30, y: -2, color: '#1c1a10',
-      points: [[-180,0],[-108,6],[-52,8],[-8,4],[30,6],[88,5],[145,6],[180,3]],
-    },
-  ],
-  tundra: [
-    {
-      z: -160, y: 1, color: '#0c1018', hazeColor: '#141820',
-      points: [[-180,0],[-120,18],[-65,22],[-15,14],[25,20],[80,16],[140,18],[180,12]],
-    },
-    {
-      z: -110, y: 0, color: '#141824', hazeColor: '#1c2030',
-      points: [[-180,0],[-120,10],[-65,13],[-15,8],[25,11],[80,9],[140,11],[180,7]],
-    },
-    {
-      z: -65, y: -1, color: '#1c2030', hazeColor: '#202438',
-      points: [[-180,0],[-115,5],[-58,7],[-10,4],[28,6],[85,4],[142,6],[180,3]],
-    },
-    {
-      z: -30, y: -2, color: '#202838',
-      points: [[-180,0],[-110,3],[-55,4],[-8,2],[30,3],[88,2],[145,3],[180,2]],
-    },
-  ],
-  mangrove: [
-    {
-      z: -160, y: 1, color: '#040a10', hazeColor: '#0c1418',
-      points: [[-180,0],[-120,30],[-65,38],[-15,24],[25,34],[80,28],[140,32],[180,22]],
-    },
-    {
-      z: -110, y: 0, color: '#081418', hazeColor: '#101e20',
-      points: [[-180,0],[-120,18],[-65,24],[-15,14],[25,20],[80,16],[140,20],[180,12]],
-    },
-    {
-      z: -65, y: -1, color: '#0c1e1e', hazeColor: '#142828',
-      points: [[-180,0],[-115,8],[-58,12],[-10,6],[28,10],[85,7],[142,9],[180,5]],
-    },
-    {
-      z: -30, y: -2, color: '#102828',
-      points: [[-180,0],[-110,4],[-55,6],[-8,3],[30,5],[88,3],[145,5],[180,3]],
-    },
-  ],
-}
-
-// ─── Individual ridge layer rendered as ShapeGeometry ─────────────────────────
-function RidgeLayer({ layer }: { layer: RidgeLayer }) {
-  const geo = useMountainGeo(layer.points, -15, 380)
-  return (
-    <group position={[0, layer.y, layer.z]}>
-      <mesh geometry={geo}>
-        <meshBasicMaterial color={layer.color} side={THREE.DoubleSide} depthWrite={true} />
-      </mesh>
-      {/* Ground fill — no gap at base */}
-      <mesh position={[0, -15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[600, 80]} />
-        <meshBasicMaterial color={layer.color} depthWrite={true} />
-      </mesh>
-    </group>
-  )
-}
-
-// ─── Background scenery — smooth bezier silhouettes per biome ─────────────────
-function BackgroundScenery({ biomeType = 'temperate' }: { biomeType: BiomeType }) {
-  const layers = BIOME_LAYERS[biomeType] ?? BIOME_LAYERS.temperate
-
-  return (
-    <group>
-      {layers.map((layer, li) => (
-        <group key={li}>
-          <RidgeLayer layer={layer} />
-          {/* Atmospheric haze plane between layers (skip the last/nearest) */}
-          {layer.hazeColor && li < layers.length - 1 && (
-            <mesh
-              position={[0, layer.y + 5, layer.z + 10]}
-              rotation={[-Math.PI / 2, 0, 0]}
-            >
-              <planeGeometry args={[600, 80]} />
-              <meshBasicMaterial
-                color={layer.hazeColor}
-                transparent
-                opacity={0.12}
-                depthWrite={false}
-              />
-            </mesh>
-          )}
-        </group>
-      ))}
-    </group>
-  )
-}
 
 // ─── Rain ─────────────────────────────────────────────────────────────────────
 function Rain({ heavy }: { heavy: boolean }) {
@@ -516,9 +359,17 @@ function Fireflies() {
 interface DynamicSkyProps {
   weatherCondition?: WeatherCondition
   biomeType?:        BiomeType
+  classicSky?:       boolean
 }
 
-export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate' }: DynamicSkyProps) {
+const CLASSIC_SKY_COLORS: Record<string, string> = {
+  dawn:  '#180a04',
+  day:   '#061428',
+  dusk:  '#120604',
+  night: '#020410',
+}
+
+export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate', classicSky = false }: DynamicSkyProps) {
   const now     = new Date()
   const t       = now.getHours() + now.getMinutes() / 60
   const cfg     = getSkyConfig(t)
@@ -541,21 +392,12 @@ export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate'
 
   return (
     <>
-      {isNight && <color attach="background" args={['#040910']} />}
-
-      {!isNight && (
-        <Sky distance={450000} sunPosition={sunPos}
-          rayleigh={cfg.rayleigh}
-          turbidity={isRainy ? 22 : cfg.turbidity}
-          mieCoefficient={cfg.mieCoeff}
-          mieDirectionalG={cfg.mieG}
-        />
+      {/* Classic sky solid background colour (used when photo panorama is off) */}
+      {classicSky && (
+        <color attach="background" args={[CLASSIC_SKY_COLORS[cfg.phase]]} />
       )}
 
-      {/* Layered 2D illustrated background scenery — smooth bezier ridges */}
-      <BackgroundScenery biomeType={biomeType} />
-
-      {/* Background clouds painted into the sky panorama */}
+      {/* Background clouds in sky */}
       <BackgroundClouds condition={weatherCondition} isNight={isNight} />
 
       {/* Celestial bodies */}

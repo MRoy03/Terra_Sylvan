@@ -66,9 +66,9 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
   const hasMedia = messages.some((m) => m.type === 'image' || m.type === 'video')
 
   return (
-    <div className="flex flex-col h-full bg-night">
+    <div className="flex flex-col h-full" style={{ background: 'var(--th-bg, #030c05)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-forest-800/50 bg-forest-950/80 backdrop-blur-sm">
+      <div className="flex items-center gap-3 px-4 py-3 border-b backdrop-blur-sm" style={{ background: 'var(--th-header, rgba(3,12,5,0.85))', borderColor: 'var(--th-border, rgb(30 58 34 / 0.5))' }}>
         {onBack && (
           <button onClick={onBack} className="text-forest-400 hover:text-white transition-colors md:hidden">
             <ArrowLeft size={22} />

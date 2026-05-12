@@ -15,6 +15,7 @@ interface TreeSceneProps {
   animal?:          AnimalType
   bondLevel?:       number
   weatherOverride?: WeatherCondition
+  showPhoto?:       boolean
 }
 
 export default function TreeScene(props: TreeSceneProps) {

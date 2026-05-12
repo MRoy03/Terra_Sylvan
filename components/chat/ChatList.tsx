@@ -71,9 +71,9 @@ export function ChatList({ onSelectChat, selectedChatId, onNewChat }: ChatListPr
     : chats
 
   return (
-    <div className="flex flex-col h-full bg-forest-950/90">
+    <div className="flex flex-col h-full" style={{ background: 'var(--th-bg-card, rgb(3 12 5 / 0.92))' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-forest-800/50">
+      <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'var(--th-border, rgb(30 58 34 / 0.5))', background: 'var(--th-header, transparent)' }}>
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <span>💬</span> Chats
         </h2>
@@ -87,8 +87,8 @@ export function ChatList({ onSelectChat, selectedChatId, onNewChat }: ChatListPr
       </div>
 
       {/* Search */}
-      <div className="px-3 py-2 border-b border-forest-800/30">
-        <div className="flex items-center gap-2 bg-forest-900/60 rounded-xl px-3 py-2 border border-forest-800/40">
+      <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--th-border, rgb(30 58 34 / 0.3))' }}>
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2 border" style={{ background: 'var(--th-bg-input, rgb(15 34 18 / 0.6))', borderColor: 'var(--th-border, rgb(30 58 34 / 0.4))' }}>
           <Search size={15} className="text-forest-500 flex-shrink-0" />
           <input
             value={search}

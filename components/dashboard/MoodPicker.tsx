@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { MOOD_OPTIONS, getMoodOption, type MoodType } from '@/lib/mood'
-import { saveMood } from '@/lib/firestore'
+import { saveMood, clearMood } from '@/lib/firestore'
 import { forestToast } from '@/lib/forest-toast'
 
 interface MoodPickerProps {
   uid:          string
   currentMood:  MoodType | null
-  onMoodChange: (mood: MoodType) => void
+  onMoodChange: (mood: MoodType | null) => void
 }
 
 export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) {
@@ -27,6 +27,21 @@ export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) 
       forestToast.mood(`Mood set to ${opt.label}`, { duration: 2500 })
     } catch {
       forestToast.error('Could not save mood')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleClear = async () => {
+    if (!currentMood) { setOpen(false); return }
+    setSaving(true)
+    try {
+      await clearMood(uid)
+      onMoodChange(null)
+      setOpen(false)
+      forestToast.info('Mood cleared — real weather restored.')
+    } catch {
+      forestToast.error('Could not clear mood')
     } finally {
       setSaving(false)
     }
@@ -53,10 +68,34 @@ export function MoodPicker({ uid, currentMood, onMoodChange }: MoodPickerProps) 
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute top-full right-0 mt-2 z-50 animate-fade-in">
-            <div className="ritual-card p-3 w-52">
+            <div className="ritual-card p-3 w-56">
               <p className="text-[10px] text-forest-600 uppercase tracking-wider font-medium mb-2.5 px-1">
                 How are you feeling?
               </p>
+
+              {/* Clear / Real weather option */}
+              <button
+                onClick={handleClear}
+                disabled={saving}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all mb-1
+                  border-b border-forest-900/60 pb-2.5 mb-2.5
+                  ${!currentMood
+                    ? 'bg-forest-800/40 text-forest-300'
+                    : 'text-forest-500 hover:bg-forest-900/50 hover:text-forest-200'
+                  }`}
+              >
+                <span className="text-lg leading-none">🌤</span>
+                <div className="text-left">
+                  <p className="text-xs font-medium leading-none">Real weather</p>
+                  <p className="text-[10px] text-forest-600 mt-0.5">
+                    {currentMood ? 'Clear mood override' : 'Active — no override'}
+                  </p>
+                </div>
+                {!currentMood && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-forest-400" />
+                )}
+              </button>
+
               <div className="flex flex-col gap-1">
                 {MOOD_OPTIONS.map(opt => (
                   <button

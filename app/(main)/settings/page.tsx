@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, Loader2, Save } from 'lucide-react'
 import { forestToast } from '@/lib/forest-toast'
@@ -11,8 +11,9 @@ import { uploadMedia, isCloudinaryConfigured } from '@/lib/cloudinary'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
-import { TreeType, BiomeType, TREE_CONFIGS, BIOME_CONFIGS } from '@/types'
+import { TreeType, BiomeType, TREE_CONFIGS, BIOME_CONFIGS, TREE_BIOME_MAP } from '@/types'
 import { AnimalType } from '@/components/3d/AnimalCompanion'
+import { useTheme } from '@/hooks/useTheme'
 
 const ANIMAL_OPTIONS: { type: AnimalType; emoji: string; label: string }[] = [
   { type: 'none',   emoji: '🚫', label: 'None'   },
@@ -47,6 +48,25 @@ export default function SettingsPage() {
   const [uploadPct,    setUploadPct]    = useState(0)
   const [errors,       setErrors]       = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const biome = profile?.treeType ? TREE_BIOME_MAP[profile.treeType] as BiomeType : undefined
+  const { theme, setTheme, themes } = useTheme(biome)
+  const [selectedThemeId, setSelectedThemeId] = useState<string>(theme.id)
+  const t = theme.tokens
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--th-bg',           t.bg)
+    root.style.setProperty('--th-bg-card',      t.bgCard)
+    root.style.setProperty('--th-border',       t.border)
+    root.style.setProperty('--th-accent',       t.accent)
+    root.style.setProperty('--th-accent-muted', t.accentMuted)
+    root.style.setProperty('--th-glow',         t.glow)
+    return () => {
+      ;['--th-bg','--th-bg-card','--th-border','--th-accent','--th-accent-muted','--th-glow'].forEach(v =>
+        root.style.removeProperty(v))
+    }
+  }, [t])
 
   if (!profile) return null
 
@@ -109,9 +129,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-forest-950 via-forest-900 to-forest-950">
+    <div className="min-h-screen" style={{ background: `linear-gradient(180deg, ${t.bgCard} 0%, ${t.bg} 40%, ${t.bg} 100%)` }}>
+      {/* Themed accent top strip */}
+      <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, transparent, ${t.glow}70, transparent)` }} />
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-forest-950/80 border-b border-forest-800/50">
+      <div className="sticky top-0 z-10 backdrop-blur-xl border-b" style={{ background: t.headerBg, borderColor: `${t.border}80` }}>
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -253,6 +275,41 @@ export default function SettingsPage() {
             ))}
           </div>
           <p className="text-xs text-forest-600 text-center italic">Your companion appears beside your tree in the 3D scene.</p>
+        </div>
+
+        {/* App Theme */}
+        <div className="flex flex-col gap-3">
+          <label className="text-sm font-medium" style={{ color: t.text }}>App Theme</label>
+          <div className="grid grid-cols-4 gap-2">
+            {themes.map(th => (
+              <button
+                key={th.id}
+                type="button"
+                onClick={() => {
+                  setSelectedThemeId(th.id)
+                  setTheme(th.id)
+                }}
+                className="flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all"
+                style={{
+                  background:   selectedThemeId === th.id ? `${th.tokens.bgCard}` : `${th.tokens.bg}cc`,
+                  borderColor:  selectedThemeId === th.id ? th.tokens.accent : `${th.tokens.border}80`,
+                  transform:    selectedThemeId === th.id ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow:    selectedThemeId === th.id ? `0 0 12px ${th.tokens.glow}40` : 'none',
+                }}
+              >
+                <span className="text-xl">{th.emoji}</span>
+                <span className="text-[9px] font-medium text-center leading-tight" style={{ color: th.tokens.textMuted }}>{th.label}</span>
+                {/* Color preview bar */}
+                <div className="w-full h-1 rounded-full mt-0.5" style={{ background: `linear-gradient(90deg, ${th.tokens.accent}, ${th.tokens.glow})` }} />
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-center italic" style={{ color: t.textMuted }}>
+            {themes.find(th => th.id === selectedThemeId)?.label ?? 'Forest Dark'} theme — affects Chat &amp; Settings pages.
+          </p>
+          <p className="text-[10px] text-center" style={{ color: `${t.textMuted}80` }}>
+            Auto-theme from your biome is used if no selection is saved.
+          </p>
         </div>
 
         <Button size="lg" fullWidth onClick={handleSave} loading={saving}>

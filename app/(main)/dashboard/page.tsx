@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Network, Shield } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Shield } from 'lucide-react'
 import { forestToast } from '@/lib/forest-toast'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
@@ -31,9 +31,13 @@ const TreeScene = dynamic(() => import('@/components/3d/TreeScene'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full forest-bg flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="text-7xl animate-float">🌱</div>
-        <p className="text-forest-500 animate-pulse text-sm font-display italic">Growing your forest…</p>
+      <div className="flex flex-col items-center gap-3">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 rounded-full border-2 border-forest-800/40 border-t-forest-500 animate-spin" />
+          <div className="absolute inset-2 rounded-full border border-forest-700/30 border-b-forest-600/60 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+          <div className="absolute inset-4 rounded-full bg-forest-900/60 border border-forest-700/40" />
+        </div>
+        <p className="text-forest-600 text-xs font-mono tracking-widest uppercase">Rendering forest</p>
       </div>
     </div>
   ),
@@ -77,6 +81,12 @@ export default function DashboardPage() {
   const [mood,         setMood]         = useState<MoodType | null>(
     () => (profile as any)?.mood as MoodType ?? null
   )
+  const [showPhoto,    setShowPhoto]    = useState<boolean>(true)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('ts_realistic_bg')
+    if (stored !== null) setShowPhoto(stored !== 'false')
+  }, [])
 
   useEffect(() => {
     if ((profile as any)?.mood) setMood((profile as any).mood as MoodType)
@@ -127,9 +137,13 @@ export default function DashboardPage() {
   const now  = new Date()
   const hour = now.getHours()
   const timePhase =
-    hour >= 5  && hour < 8  ? '🌅' :
-    hour >= 8  && hour < 17 ? '☀️'  :
-    hour >= 17 && hour < 20 ? '🌆'  : '🌙'
+    hour >= 5  && hour < 8  ? 'Dawn'    :
+    hour >= 8  && hour < 17 ? 'Day'     :
+    hour >= 17 && hour < 20 ? 'Dusk'    : 'Night'
+  const timeColor =
+    hour >= 5  && hour < 8  ? 'text-orange-400/80' :
+    hour >= 8  && hour < 17 ? 'text-amber-300/80'  :
+    hour >= 17 && hour < 20 ? 'text-orange-500/80' : 'text-indigo-400/80'
 
   const handleLogout = async () => {
     setSigningOut(true)
@@ -158,6 +172,7 @@ export default function DashboardPage() {
         animal={(profile as any).animal ?? 'none'}
         bondLevel={bond.level}
         weatherOverride={weatherOverride}
+        showPhoto={showPhoto}
       />
 
       {/* ── Navigation bar ── */}
@@ -173,7 +188,7 @@ export default function DashboardPage() {
         {/* Centre badges */}
         <div className="flex items-center gap-1.5">
           <span className="tree-badge">{badge.label}</span>
-          <span className="tree-badge hidden sm:inline-flex">{timePhase}</span>
+          <span className={`tree-badge hidden sm:inline-flex text-[10px] ${timeColor}`}>{timePhase}</span>
           <span className="tree-badge hidden md:inline-flex">{SEASON_LABEL[season]}</span>
           <NavWeather />
           {/* Mood indicator */}
@@ -186,6 +201,17 @@ export default function DashboardPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowPhoto(v => {
+              const next = !v
+              localStorage.setItem('ts_realistic_bg', String(next))
+              return next
+            })}
+            title={showPhoto ? 'Switch to classic sky' : 'Switch to photo panorama'}
+            className={`p-1.5 rounded-lg text-sm transition-colors ${!showPhoto ? 'text-amber-300 bg-amber-900/20' : 'text-forest-700 hover:text-forest-400'}`}
+          >
+            {showPhoto ? '🖼️' : '🎨'}
+          </button>
           <MoodPicker uid={profile.uid} currentMood={mood} onMoodChange={setMood} />
           <button
             onClick={() => setBioMode(v => !v)}
@@ -220,33 +246,39 @@ export default function DashboardPage() {
             title="View chats"
             onClick={() => router.push('/chat')}
           >
-            🍃 <span className="tabular-nums">{profile.messageCount}</span>
+            <span className="text-[11px]">🍃</span>
+            <span className="tabular-nums">{profile.messageCount}</span>
           </button>
           <button
             className="stat-pill hover:bg-white/8 transition-colors cursor-pointer"
             title="View photos"
             onClick={() => openGallery('image')}
           >
-            🌸 <span className="tabular-nums">{profile.imageCount}</span>
+            <span className="text-[11px]">🌸</span>
+            <span className="tabular-nums">{profile.imageCount}</span>
           </button>
           <button
             className="stat-pill hover:bg-white/8 transition-colors cursor-pointer"
             title="View videos"
             onClick={() => openGallery('video')}
           >
-            🍎 <span className="tabular-nums">{profile.videoCount}</span>
+            <span className="text-[11px]">🍎</span>
+            <span className="tabular-nums">{profile.videoCount}</span>
           </button>
           <span className="stat-pill">
-            🌿 <span className="tabular-nums">{profile.connectionCount}</span>
+            <span className="text-[11px]">🌿</span>
+            <span className="tabular-nums">{profile.connectionCount}</span>
           </span>
           {(profile as any).seeds > 0 && (
             <span className="stat-pill">
-              🌱 <span className="tabular-nums">{(profile as any).seeds}</span>
+              <span className="text-[11px]">🌱</span>
+              <span className="tabular-nums">{(profile as any).seeds}</span>
             </span>
           )}
         </div>
         <span className="stat-pill self-start text-xs">
-          🕰 {stats.ageInDays === 0 ? 'Just sprouted' : `${stats.ageInDays}d old`}
+          <span className="text-[11px]">🕰</span>
+          {stats.ageInDays === 0 ? 'Just sprouted' : `${stats.ageInDays}d`}
         </span>
 
         {/* Bond level */}
