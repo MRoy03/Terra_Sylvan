@@ -7,14 +7,14 @@ import { useTyping } from '@/hooks/useTyping'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useAuth } from '@/lib/auth-context'
 import { useVoiceCall } from '@/context/VoiceCallContext'
-import { sendMessage } from '@/lib/firestore'
+import { sendMessage, markAsReplied } from '@/lib/firestore'
 import { Avatar } from '@/components/ui/Avatar'
 import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
 import { TypingIndicator } from './TypingIndicator'
 import { MediaGallery } from './MediaGallery'
 import { formatLastSeen } from '@/lib/utils'
-import { UserProfile, MessageType } from '@/types'
+import { UserProfile, MessageType, Message } from '@/types'
 import { forestToast } from '@/lib/forest-toast'
 
 interface ChatWindowProps {
@@ -30,6 +30,7 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
   const { typers, notifyTyping, stopTyping } = useTyping(chatId, user?.uid ?? null)
   const { isOnline, lastSeen }               = useOnlineStatus(otherUser.uid)
   const [showGallery, setShowGallery]        = useState(false)
+  const [replyingTo, setReplyingTo]          = useState<Message | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -39,7 +40,20 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
   const handleSend = async (content: string, type: MessageType = 'text', mediaURL?: string, extra?: Record<string, unknown>) => {
     if (!user) return
     try {
-      await sendMessage(chatId, user.uid, content, type, mediaURL, extra)
+      const fullExtra: Record<string, unknown> = { ...extra }
+      if (replyingTo) {
+        fullExtra.replyTo = {
+          id:       replyingTo.id,
+          senderId: replyingTo.senderId,
+          content:  replyingTo.content,
+          type:     replyingTo.type,
+        }
+      }
+      await sendMessage(chatId, user.uid, content, type, mediaURL, fullExtra)
+      if (replyingTo) {
+        await markAsReplied(chatId, replyingTo.id)
+        setReplyingTo(null)
+      }
     } catch {
       forestToast.error('Failed to send message')
     }
@@ -130,6 +144,7 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
                 message={msg}
                 isMine={msg.senderId === user?.uid}
                 chatId={chatId}
+                onReply={setReplyingTo}
               />
             ))}
             {typers.length > 0 && <TypingIndicator />}
@@ -142,6 +157,8 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
         onSend={handleSend}
         onTyping={notifyTyping}
         onStopTyping={stopTyping}
+        replyingTo={replyingTo}
+        onCancelReply={() => setReplyingTo(null)}
       />
 
       {showGallery && (

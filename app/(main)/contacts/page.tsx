@@ -26,9 +26,9 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-forest-950">
+    <div className="flex flex-col h-screen" style={{ background: 'var(--th-bg, #030c05)' }}>
       {/* Back link + tab bar */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-forest-800/50">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b" style={{ borderColor: 'var(--th-border, rgb(30 58 34 / 0.5))' }}>
         <Link
           href="/dashboard"
           className="flex items-center gap-1.5 text-xs text-forest-600 hover:text-forest-400 transition-colors"

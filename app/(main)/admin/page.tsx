@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, Trash2, RefreshCw, Users, MessageSquare, Image, Video, TreePine, X, AlertTriangle, Search, BookOpen } from 'lucide-react'
+import { Shield, Trash2, RefreshCw, Users, MessageSquare, Image, Video, TreePine, X, AlertTriangle, Search, BookOpen, Timer } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
-import { getAllUsers, deleteUserProfile } from '@/lib/firestore'
+import { getAllUsers, deleteUserProfile, getAdminSettings, saveAdminSettings } from '@/lib/firestore'
 import { computeTreeStats } from '@/lib/tree-utils'
 import { TREE_CONFIGS } from '@/types'
 import { forestToast } from '@/lib/forest-toast'
@@ -100,13 +100,15 @@ export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  const [users,      setUsers]      = useState<UserProfile[]>([])
-  const [fetching,   setFetching]   = useState(true)
-  const [search,     setSearch]     = useState('')
-  const [toDelete,   setToDelete]   = useState<UserProfile | null>(null)
-  const [deleting,   setDeleting]   = useState(false)
-  const [sortKey,    setSortKey]    = useState<'createdAt' | 'messageCount' | 'imageCount' | 'connectionCount'>('createdAt')
-  const [sortDesc,   setSortDesc]   = useState(true)
+  const [users,              setUsers]              = useState<UserProfile[]>([])
+  const [fetching,           setFetching]           = useState(true)
+  const [search,             setSearch]             = useState('')
+  const [toDelete,           setToDelete]           = useState<UserProfile | null>(null)
+  const [deleting,           setDeleting]           = useState(false)
+  const [sortKey,            setSortKey]            = useState<'createdAt' | 'messageCount' | 'imageCount' | 'connectionCount'>('createdAt')
+  const [sortDesc,           setSortDesc]           = useState(true)
+  const [panoramaMs,         setPanoramaMs]         = useState<number>(5000)
+  const [savingPanorama,     setSavingPanorama]     = useState(false)
 
   // ── gate ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -130,6 +132,23 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => { loadUsers() }, [loadUsers])
+
+  useEffect(() => {
+    getAdminSettings().then(s => setPanoramaMs(s.panoramaTransitionMs)).catch(() => {})
+  }, [])
+
+  const handleSavePanorama = async (ms: number) => {
+    setSavingPanorama(true)
+    try {
+      await saveAdminSettings({ panoramaTransitionMs: ms })
+      setPanoramaMs(ms)
+      forestToast.info(`Panorama display: ${ms === 0 ? 'off' : `${ms / 1000}s`}`)
+    } catch {
+      forestToast.error('Could not save setting')
+    } finally {
+      setSavingPanorama(false)
+    }
+  }
 
   // ── delete ────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
@@ -243,6 +262,38 @@ export default function AdminPage() {
           <StatCard icon={<MessageSquare size={16}/>} label="Total messages"   value={totalMessages}   accent="#6ee7b7" />
           <StatCard icon={<Image size={16}/>}         label="Total media"      value={totalMedia}      accent="#c4b5fd" />
           <StatCard icon={<TreePine size={16}/>}      label="Online now"       value={onlineNow}       accent="#fcd34d" />
+        </div>
+
+        {/* ── Panorama timing ── */}
+        <div className="rounded-2xl border border-forest-900/50 px-4 py-3" style={{ background: 'rgba(10,20,11,0.7)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Timer size={15} className="text-amber-400" />
+            <p className="text-sm font-medium text-amber-300">Panorama Transition Duration</p>
+            <span className="text-[10px] text-forest-700">— how long the landscape photo shows on each dashboard visit</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: 'Off',   ms: 0 },
+              { label: '1s',    ms: 1000 },
+              { label: '2s',    ms: 2000 },
+              { label: '5s',    ms: 5000 },
+              { label: '10s',   ms: 10000 },
+              { label: '30s',   ms: 30000 },
+            ].map(({ label, ms }) => (
+              <button
+                key={ms}
+                disabled={savingPanorama}
+                onClick={() => handleSavePanorama(ms)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                  panoramaMs === ms
+                    ? 'border-amber-700/60 bg-amber-900/40 text-amber-300'
+                    : 'border-white/10 text-white/40 hover:text-white/70 hover:border-white/20'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Search + sort ── */}

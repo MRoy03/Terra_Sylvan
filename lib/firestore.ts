@@ -201,6 +201,10 @@ export async function markMessageViewed(chatId: string, messageId: string, uid: 
   })
 }
 
+export async function markAsReplied(chatId: string, messageId: string): Promise<void> {
+  await updateDoc(doc(db, 'chats', chatId, 'messages', messageId), { isReplied: true })
+}
+
 export async function getMediaByUser(
   uid:  string,
   type: 'image' | 'video',
@@ -244,4 +248,20 @@ export async function getAllUsers(): Promise<UserProfile[]> {
 
 export async function deleteUserProfile(uid: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid))
+}
+
+// ─── Admin Settings ───────────────────────────────────────────────────────────
+export interface AdminSettings {
+  panoramaTransitionMs: number
+}
+
+export async function getAdminSettings(): Promise<AdminSettings> {
+  const snap = await getDoc(doc(db, 'adminSettings', 'siteConfig'))
+  if (!snap.exists()) return { panoramaTransitionMs: 5000 }
+  const data = snap.data() as Partial<AdminSettings>
+  return { panoramaTransitionMs: data.panoramaTransitionMs ?? 5000 }
+}
+
+export async function saveAdminSettings(settings: AdminSettings): Promise<void> {
+  await setDoc(doc(db, 'adminSettings', 'siteConfig'), settings)
 }

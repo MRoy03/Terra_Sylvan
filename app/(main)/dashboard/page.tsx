@@ -18,7 +18,7 @@ import { StoriesBar } from '@/components/social/StoriesBar'
 import { ForestRadio } from '@/components/audio/ForestRadio'
 import { BadgeDisplay } from '@/components/profile/BadgeDisplay'
 import { computeBadges } from '@/lib/badges'
-import { getMediaByUser } from '@/lib/firestore'
+import { getMediaByUser, getAdminSettings } from '@/lib/firestore'
 import { getMoodOption, type MoodType } from '@/lib/mood'
 import { computeBondXP, getBondLevel, BOND_GLOW } from '@/lib/companion-bond'
 import { DailyRitual }   from '@/components/dashboard/DailyRitual'
@@ -85,7 +85,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem('ts_realistic_bg')
-    if (stored !== null) setShowPhoto(stored !== 'false')
+    const userPref = stored !== null ? stored !== 'false' : true
+
+    // Show panorama on every dashboard visit for admin-configured duration, then restore preference
+    setShowPhoto(true)
+    getAdminSettings().then(({ panoramaTransitionMs }) => {
+      if (panoramaTransitionMs > 0) {
+        setTimeout(() => setShowPhoto(userPref), panoramaTransitionMs)
+      } else {
+        setShowPhoto(userPref)
+      }
+    }).catch(() => {
+      setTimeout(() => setShowPhoto(userPref), 5000)
+    })
   }, [])
 
   useEffect(() => {
@@ -266,10 +278,14 @@ export default function DashboardPage() {
             <span className="text-[11px]">🍎</span>
             <span className="tabular-nums">{profile.videoCount}</span>
           </button>
-          <span className="stat-pill">
+          <button
+            className="stat-pill hover:bg-white/8 transition-colors cursor-pointer"
+            title="View contacts"
+            onClick={() => router.push('/contacts')}
+          >
             <span className="text-[11px]">🌿</span>
             <span className="tabular-nums">{profile.connectionCount}</span>
-          </span>
+          </button>
           {(profile as any).seeds > 0 && (
             <span className="stat-pill">
               <span className="text-[11px]">🌱</span>
@@ -419,7 +435,7 @@ export default function DashboardPage() {
 
       {/* ── Bottom dock ── */}
       <div className="bottom-dock">
-        <DockButton icon="🌳" label="My Tree"  active   onClick={() => setStatsOpen(v => !v)} />
+        <DockButton icon="🌳" label="My Tree"  active={statsOpen}   onClick={() => setStatsOpen(v => !v)} />
         <DockButton icon="💬" label="Chats"    href="/chat"     badge={unreadCount} />
         <DockButton icon="🌲" label="Forest"   href="/forest" />
         <DockButton icon="👥" label="Contacts" href="/contacts" />

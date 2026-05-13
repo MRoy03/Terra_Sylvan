@@ -25,10 +25,10 @@ export default function ForestPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-forest-950 via-forest-900 to-forest-950">
+    <div className="min-h-screen" style={{ background: 'var(--th-bg, #030c05)' }}>
 
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-forest-950/80 border-b border-forest-800/50">
+      <div className="sticky top-0 z-10 backdrop-blur-xl border-b" style={{ background: 'var(--th-header, rgba(3,12,5,0.85))', borderColor: 'var(--th-border, rgb(30 58 34 / 0.5))' }}>
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -57,7 +57,8 @@ export default function ForestPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search forests…"
-              className="w-full bg-forest-900/60 border border-forest-800/50 rounded-xl pl-9 pr-4 py-2.5 text-sm text-forest-100 placeholder-forest-600 focus:outline-none focus:ring-2 focus:ring-forest-600"
+              className="w-full border rounded-xl pl-9 pr-4 py-2.5 text-sm text-forest-100 placeholder-forest-600 focus:outline-none focus:ring-2 focus:ring-forest-600"
+              style={{ background: 'var(--th-bg-card, rgba(10,20,12,0.6))', borderColor: 'var(--th-border, rgb(30 58 34 / 0.5))' }}
             />
           </div>
         </div>

@@ -3,15 +3,29 @@
 import { useState } from 'react'
 import { Message } from '@/types'
 import { formatTime } from '@/lib/utils'
-import { SmilePlus, Wind, Leaf } from 'lucide-react'
+import { SmilePlus, Wind, Leaf, Reply } from 'lucide-react'
 import { toggleReaction, markMessageViewed } from '@/lib/firestore'
 import { useAuth } from '@/lib/auth-context'
 import { getStickerAnimation } from '@/lib/stickers'
 
 interface MessageBubbleProps {
-  message: Message
-  isMine:  boolean
-  chatId:  string
+  message:  Message
+  isMine:   boolean
+  chatId:   string
+  onReply?: (message: Message) => void
+}
+
+function QuotedBlock({ replyTo, isMine }: { replyTo: NonNullable<Message['replyTo']>; isMine: boolean }) {
+  const preview = replyTo.type !== 'text' ? `[${replyTo.type}]` : replyTo.content.slice(0, 60) + (replyTo.content.length > 60 ? '…' : '')
+  return (
+    <div className={`mb-1.5 px-2.5 py-1.5 rounded-xl border-l-2 text-[11px]
+      ${isMine
+        ? 'border-white/40 bg-white/10 text-white/60'
+        : 'border-forest-400/50 bg-forest-800/40 text-forest-400'}`}>
+      <p className="font-medium text-[10px] opacity-70 mb-0.5">↩ Reply</p>
+      <p className="leading-snug opacity-80 line-clamp-2">{preview}</p>
+    </div>
+  )
 }
 
 const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '🌿', '🌸', '✨', '🔥']
@@ -240,17 +254,30 @@ function LeafBubble({ message, isMine }: { message: Message; isMine: boolean }) 
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export function MessageBubble({ message, isMine, chatId }: MessageBubbleProps) {
+export function MessageBubble({ message, isMine, chatId, onReply }: MessageBubbleProps) {
   const { user }     = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
   const myUid      = user?.uid ?? ''
   const reactions  = message.reactions ?? {}
   const hasReactions = Object.values(reactions).some(u => u.length > 0)
-  const isReplied  = !!(message as any).isReplied
+  const isReplied  = !!message.isReplied
 
   async function handleReact(emoji: string) {
     if (!myUid) return
     await toggleReaction(chatId, message.id, emoji, myUid)
+  }
+
+  function ReplyBtn() {
+    if (!onReply) return null
+    return (
+      <button
+        onClick={() => onReply(message)}
+        className="text-forest-600 hover:text-forest-300 p-1 relative"
+        title="Reply"
+      >
+        <Reply size={14} />
+      </button>
+    )
   }
 
   // View-once
@@ -314,11 +341,12 @@ export function MessageBubble({ message, isMine, chatId }: MessageBubbleProps) {
             </div>
           </div>
           <ReactionRow reactions={reactions} myUid={myUid} onToggle={handleReact} />
-          <div className={`absolute ${isMine ? '-left-7' : '-right-7'} top-2 opacity-0 group-hover:opacity-100 transition-opacity`}>
+          <div className={`absolute ${isMine ? '-left-14' : '-right-14'} top-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5`}>
             <button onClick={() => setPickerOpen(v => !v)} className="text-forest-600 hover:text-forest-300 p-1 relative">
               <SmilePlus size={15} />
               {pickerOpen && <ReactionPicker onPick={handleReact} onClose={() => setPickerOpen(false)} />}
             </button>
+            <ReplyBtn />
           </div>
         </div>
       </div>
@@ -326,6 +354,7 @@ export function MessageBubble({ message, isMine, chatId }: MessageBubbleProps) {
   }
 
   // Regular text bubble
+  const replyTo = message.replyTo
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} px-3 py-0.5`}>
       <div className="relative group max-w-[72%]">
@@ -335,6 +364,7 @@ export function MessageBubble({ message, isMine, chatId }: MessageBubbleProps) {
             : 'bg-forest-900/80 text-forest-100 rounded-bl-sm border border-forest-800/40'
           }`}
         >
+          {replyTo && <QuotedBlock replyTo={replyTo} isMine={isMine} />}
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
           <div className={`flex items-center gap-1 mt-0.5 ${isMine ? 'justify-end' : 'justify-start'}`}>
             <span className="text-[10px] text-forest-400/70">{formatTime(message.timestamp)}</span>
@@ -342,11 +372,12 @@ export function MessageBubble({ message, isMine, chatId }: MessageBubbleProps) {
           </div>
         </div>
         <ReactionRow reactions={reactions} myUid={myUid} onToggle={handleReact} />
-        <div className={`absolute ${isMine ? '-left-7' : '-right-7'} top-1.5 opacity-0 group-hover:opacity-100 transition-opacity`}>
+        <div className={`absolute ${isMine ? '-left-14' : '-right-14'} top-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5`}>
           <button onClick={() => setPickerOpen(v => !v)} className="text-forest-600 hover:text-forest-300 p-1 relative">
             <SmilePlus size={15} />
             {pickerOpen && <ReactionPicker onPick={handleReact} onClose={() => setPickerOpen(false)} />}
           </button>
+          <ReplyBtn />
         </div>
       </div>
     </div>

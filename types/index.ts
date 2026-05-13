@@ -66,6 +66,13 @@ export interface TreeStats {
 }
 
 // ─── Messaging ───────────────────────────────────────────────────────────────
+export interface ReplyTo {
+  id: string
+  senderId: string
+  content: string
+  type: string
+}
+
 export interface Message {
   id: string
   senderId: string
@@ -75,6 +82,8 @@ export interface Message {
   timestamp: number
   status: 'sent' | 'delivered' | 'read'
   reactions?: Record<string, string[]>
+  isReplied?: boolean
+  replyTo?: ReplyTo
 }
 
 export interface Chat {

@@ -1,21 +1,24 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Smile, Paperclip, Send, X, Loader2, Leaf, Wind } from 'lucide-react'
+import { Smile, Paperclip, Send, X, Loader2, Leaf, Wind, Reply } from 'lucide-react'
 import { EmojiPanel } from './EmojiPanel'
 import { uploadMedia, isCloudinaryConfigured } from '@/lib/cloudinary'
 import { forestToast } from '@/lib/forest-toast'
+import type { Message } from '@/types'
 
 type InputMode = 'text' | 'whisper' | 'leaf' | 'viewonce'
 
 interface MessageInputProps {
-  onSend:       (content: string, type?: 'text' | 'image' | 'video' | 'sticker', mediaURL?: string, extra?: Record<string, unknown>) => Promise<void>
-  onTyping:     () => void
-  onStopTyping: () => void
-  disabled?:    boolean
+  onSend:          (content: string, type?: 'text' | 'image' | 'video' | 'sticker', mediaURL?: string, extra?: Record<string, unknown>) => Promise<void>
+  onTyping:        () => void
+  onStopTyping:    () => void
+  disabled?:       boolean
+  replyingTo?:     Message | null
+  onCancelReply?:  () => void
 }
 
-export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: MessageInputProps) {
+export function MessageInput({ onSend, onTyping, onStopTyping, disabled, replyingTo, onCancelReply }: MessageInputProps) {
   const [text,        setText]        = useState('')
   const [showEmoji,   setShowEmoji]   = useState(false)
   const [uploading,   setUploading]   = useState(false)
@@ -105,6 +108,23 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled }: Messa
             </div>
             <span>{uploadPct}%</span>
           </div>
+        </div>
+      )}
+
+      {/* Reply preview */}
+      {replyingTo && (
+        <div className="absolute bottom-full left-3 right-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-xl z-10
+                        bg-forest-900/95 border border-forest-600/40 backdrop-blur-sm">
+          <Reply size={13} className="text-forest-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-forest-400 font-medium leading-none mb-0.5">Replying to message</p>
+            <p className="text-[11px] text-forest-300 truncate leading-tight">
+              {replyingTo.type !== 'text' ? `[${replyingTo.type}]` : replyingTo.content}
+            </p>
+          </div>
+          <button onClick={onCancelReply} className="flex-shrink-0 text-forest-600 hover:text-forest-300 p-0.5">
+            <X size={13} />
+          </button>
         </div>
       )}
 
