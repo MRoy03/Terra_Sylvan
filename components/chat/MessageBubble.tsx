@@ -78,61 +78,75 @@ function ViewOnceBubble({ message, isMine, chatId, myUid }: {
   chatId:  string
   myUid:   string
 }) {
-  const alreadyViewed = !!(message as any).viewedBy?.[myUid]
-  const [revealed, setReveal] = useState(isMine || alreadyViewed)
+  const viewedBy: Record<string, boolean> = (message as any).viewedBy ?? {}
+  // "Vanished" when any uid OTHER than the sender has viewed it (live from Firestore)
+  const vanished = Object.entries(viewedBy).some(
+    ([uid, seen]) => uid !== message.senderId && seen,
+  )
+  const [revealing, setRevealing] = useState(false)
 
   const handleReveal = async () => {
-    if (revealed) return
-    setReveal(true)
+    if (vanished || isMine || revealing) return
+    setRevealing(true)
     await markMessageViewed(chatId, message.id, myUid)
+    // Firestore subscription will update message.viewedBy → re-render to vanished
   }
 
-  return (
-    <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} px-3 py-0.5`}>
-      <div className="relative group max-w-[72%]">
-        <div
-          onClick={handleReveal}
-          className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed transition-all border
-            ${isMine
-              ? 'border-orange-500/50 bg-orange-950/30 text-white rounded-br-sm'
-              : 'border-orange-600/50 bg-orange-950/20 text-forest-100 rounded-bl-sm'}
-            ${!revealed ? 'cursor-pointer hover:border-orange-400/60' : ''}`}
-        >
-          {!revealed ? (
-            <div className="flex items-center gap-2 text-orange-400/80">
+  // Vanished state — shown to BOTH sender and recipient after recipient views
+  if (vanished) {
+    return (
+      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} px-3 py-0.5`}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-orange-800/30 bg-orange-950/20 text-orange-700/60">
+          <span className="text-sm leading-none">🔥</span>
+          <span className="text-[10px]">Vanished · {formatTime(message.timestamp)}</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Sender sees "waiting for recipient" pill
+  if (isMine) {
+    return (
+      <div className="flex justify-end px-3 py-0.5">
+        <div className="relative group max-w-[72%]">
+          <div className="px-3.5 py-2.5 rounded-2xl rounded-br-sm text-sm border border-orange-500/40 bg-orange-950/25 text-orange-300/80">
+            <div className="flex items-center gap-2">
               <span className="text-lg leading-none">🔥</span>
               <div>
                 <p className="text-xs font-medium leading-none">View once</p>
-                <p className="text-[10px] text-orange-500/70 mt-0.5">
-                  {message.type === 'text' ? 'Tap to reveal' : `Tap to view ${message.type}`}
-                </p>
+                <p className="text-[10px] text-orange-500/60 mt-0.5">Waiting for recipient to open…</p>
               </div>
-              {!isMine && <span className="ml-auto text-[9px] text-orange-600/70">vanishes after</span>}
             </div>
-          ) : (
-            <>
-              {message.type === 'image' && message.mediaURL ? (
-                <img src={message.mediaURL} alt="view-once" className="max-w-[220px] rounded-xl" />
-              ) : message.type === 'video' && message.mediaURL ? (
-                <video src={message.mediaURL} controls className="max-w-[220px] rounded-xl" />
-              ) : (
-                <p className="whitespace-pre-wrap break-words">{message.content}</p>
-              )}
-              <div className={`flex items-center gap-1 mt-0.5 ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <span className="text-[10px] text-orange-500/60">🔥 view once</span>
-              </div>
-            </>
-          )}
+          </div>
+          <div className="flex items-center gap-1 mt-0.5 justify-end">
+            <span className="text-[10px] text-forest-600">{formatTime(message.timestamp)}</span>
+            <MessageStatus status={message.status} hasReactions={false} isReplied={false} />
+          </div>
         </div>
-        <div className={`flex items-center gap-1 mt-0.5 ${isMine ? 'justify-end' : 'justify-start'}`}>
+      </div>
+    )
+  }
+
+  // Recipient sees tap-to-reveal
+  return (
+    <div className="flex justify-start px-3 py-0.5">
+      <div className="relative group max-w-[72%]">
+        <div
+          onClick={handleReveal}
+          className="px-3.5 py-2.5 rounded-2xl rounded-bl-sm text-sm border border-orange-600/50 bg-orange-950/20 text-forest-100 cursor-pointer hover:border-orange-400/60 transition-all"
+        >
+          <div className="flex items-center gap-2 text-orange-400/80">
+            <span className={`text-lg leading-none ${revealing ? 'animate-spin' : ''}`}>🔥</span>
+            <div>
+              <p className="text-xs font-medium leading-none">View once</p>
+              <p className="text-[10px] text-orange-500/70 mt-0.5">
+                {revealing ? 'Opening…' : message.type === 'text' ? 'Tap to reveal — vanishes after' : `Tap to view ${message.type} — vanishes after`}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 mt-0.5 justify-start">
           <span className="text-[10px] text-forest-600">{formatTime(message.timestamp)}</span>
-          {isMine && (
-            <MessageStatus
-              status={message.status}
-              hasReactions={Object.values(message.reactions ?? {}).some(u => u.length > 0)}
-              isReplied={!!(message as any).isReplied}
-            />
-          )}
         </div>
       </div>
     </div>

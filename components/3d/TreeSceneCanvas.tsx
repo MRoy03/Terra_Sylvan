@@ -145,9 +145,9 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
       className="w-full h-full relative overflow-hidden"
       style={{
         backgroundImage: showPhoto && panoramaUrl ? `url(${panoramaUrl})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center center',
-        backgroundColor: '#060f07',
+        backgroundSize:     'cover',
+        backgroundPosition: 'center 35%',
+        backgroundColor:    '#060f07',
       }}
     >
       {/* Time-of-day colour grade over the photo */}
@@ -155,10 +155,16 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
         <div className="absolute inset-0 pointer-events-none" style={{ background: timeOverlay, zIndex: 1 }} />
       )}
 
+      {/* Bottom gradient fade — blends photo horizon into 3D ground plane */}
+      {showPhoto && (
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{ height: '35%', background: 'linear-gradient(to top, #060f07 0%, transparent 100%)', zIndex: 1 }} />
+      )}
+
       <Canvas shadows gl={{ antialias: true, alpha: showPhoto }} dpr={[1, 2]}
         style={{ background: 'transparent', position: 'relative', zIndex: 2 }}>
         <Suspense fallback={null}>
-          <DynamicSky weatherCondition={condition} biomeType={biome} classicSky={!showPhoto} />
+          <DynamicSky weatherCondition={condition} biomeType={biome} classicSky={!showPhoto} panoramaMode={showPhoto} />
           <Ground biomeType={biome} />
           <Tree stats={stats} displayName={displayName} status={status} photoURL={photoURL} treeType={treeType} />
           {animal && animal !== 'none' && <AnimalCompanion type={animal} scale={stats.scale} bondLevel={bondLevel} />}

@@ -360,6 +360,8 @@ interface DynamicSkyProps {
   weatherCondition?: WeatherCondition
   biomeType?:        BiomeType
   classicSky?:       boolean
+  // When true (panorama mode): only lighting renders, no sky graphics — lets the CSS photo show through
+  panoramaMode?:     boolean
 }
 
 const CLASSIC_SKY_COLORS: Record<string, string> = {
@@ -369,7 +371,7 @@ const CLASSIC_SKY_COLORS: Record<string, string> = {
   night: '#020410',
 }
 
-export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate', classicSky = false }: DynamicSkyProps) {
+export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate', classicSky = false, panoramaMode = false }: DynamicSkyProps) {
   const now     = new Date()
   const t       = now.getHours() + now.getMinutes() / 60
   const cfg     = getSkyConfig(t)
@@ -390,52 +392,58 @@ export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate'
   const season   = getCurrentSeason_local()
   const showConstellations = isNight && (season === 'winter' || season === 'autumn')
 
+  // Lighting intensity adjusted for panorama mode (brighter to complement photo background)
+  const panoramaAmbient    = isNight ? 0.12 : cfg.phase === 'dawn' || cfg.phase === 'dusk' ? 0.55 : 0.75
+  const panoramaDirIntensity = isNight ? 0.25 : cfg.phase === 'dawn' || cfg.phase === 'dusk' ? 0.8 : 1.2
+
   return (
     <>
       {/* Classic sky solid background colour (used when photo panorama is off) */}
-      {classicSky && (
+      {classicSky && !panoramaMode && (
         <color attach="background" args={[CLASSIC_SKY_COLORS[cfg.phase]]} />
       )}
 
-      {/* Background clouds in sky */}
-      <BackgroundClouds condition={weatherCondition} isNight={isNight} />
-
-      {/* Celestial bodies */}
-      {!isNight && !isRainy && <CelestialSun position={sunPos} phase={cfg.phase} />}
-      {isNight && <Moon position={[-28, 42, -85]} />}
-
-      {(isNight || cfg.phase === 'dawn' || cfg.phase === 'dusk') && (
-        <Stars radius={125} depth={65} count={isNight ? 7000 : 1800} factor={4.2} saturation={0} fade speed={0.35} />
+      {/* Sky graphics — skip in panorama mode (photo already has sky/clouds) */}
+      {!panoramaMode && (
+        <>
+          <BackgroundClouds condition={weatherCondition} isNight={isNight} />
+          {!isNight && !isRainy && <CelestialSun position={sunPos} phase={cfg.phase} />}
+          {isNight && <Moon position={[-28, 42, -85]} />}
+          {(isNight || cfg.phase === 'dawn' || cfg.phase === 'dusk') && (
+            <Stars radius={125} depth={65} count={isNight ? 7000 : 1800} factor={4.2} saturation={0} fade speed={0.35} />
+          )}
+          {showConstellations && (
+            <group position={[0, 0, -155]}>
+              <Constellation data={ORION}      offset={[-22, 28, 0]} />
+              <Constellation data={URSA_MAJOR} offset={[26,  36, 0]} />
+            </group>
+          )}
+          {isRainy && <Rain heavy={weatherCondition === 'heavy_rain' || weatherCondition === 'storm'} />}
+          {isSnowy && <Snow heavy={weatherCondition === 'heavy_snow'} />}
+          {isNight && !isRainy && !isSnowy && <Fireflies />}
+        </>
       )}
 
-      {showConstellations && (
-        <group position={[0, 0, -155]}>
-          <Constellation data={ORION}      offset={[-22, 28, 0]} />
-          <Constellation data={URSA_MAJOR} offset={[26,  36, 0]} />
-        </group>
-      )}
-
-      {isRainy && <Rain heavy={weatherCondition === 'heavy_rain' || weatherCondition === 'storm'} />}
-      {isSnowy && <Snow heavy={weatherCondition === 'heavy_snow'} />}
-
-      {/* Lighting */}
+      {/* Lighting — always rendered (even in panorama mode, to light the 3D tree) */}
       <directionalLight
         position={isNight ? [-28, 42, -85] : sunPos}
-        intensity={isNight ? 0.18 : isRainy ? sunIntensity * 0.55 : sunIntensity * 1.55}
+        intensity={panoramaMode
+          ? panoramaDirIntensity
+          : isNight ? 0.18 : isRainy ? sunIntensity * 0.55 : sunIntensity * 1.55}
         color={cfg.phase === 'dawn' ? '#ffb855' : cfg.phase === 'dusk' ? '#ff6a30' : isNight ? '#c0d0ff' : '#fffde8'}
         castShadow shadow-mapSize={[2048, 2048]}
         shadow-camera-far={85} shadow-camera-left={-22}
         shadow-camera-right={22} shadow-camera-top={22} shadow-camera-bottom={-22}
       />
       <ambientLight
-        intensity={isRainy ? ambientIntensity * 0.55 : ambientIntensity}
+        intensity={panoramaMode
+          ? panoramaAmbient
+          : isRainy ? ambientIntensity * 0.55 : ambientIntensity}
         color={isNight ? '#1a2045' : isRainy ? '#8895a8' : '#ffffff'}
       />
       <hemisphereLight
-        args={[isNight ? '#0a1032' : '#87CEEB', isNight ? '#050810' : '#3d2c20', isNight ? 0.1 : 0.32]}
+        args={[isNight ? '#0a1032' : '#87CEEB', isNight ? '#050810' : '#3d2c20', panoramaMode ? 0.45 : (isNight ? 0.1 : 0.32)]}
       />
-
-      {isNight && !isRainy && !isSnowy && <Fireflies />}
     </>
   )
 }
