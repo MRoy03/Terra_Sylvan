@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Billboard, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
@@ -54,6 +54,52 @@ function useBarkTexture(trunkColor: string) {
     tex.repeat.set(1, 2.5)
     return tex
   }, [trunkColor])
+}
+
+// ─── Wind-blown leaf particles ────────────────────────────────────────────────
+function WindLeaves({ color, s }: { color: string; s: number }) {
+  const ref = useRef<THREE.InstancedMesh>(null!)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const COUNT = 35
+  const particles = useMemo(() => Array.from({ length: COUNT }, (_, i) => ({
+    x:    (Math.random() - 0.5) * 10 * s,
+    y:    Math.random() * 5.5 * s,
+    z:    (Math.random() - 0.5) * 10 * s,
+    speed:    0.18 + Math.random() * 0.55,
+    phase:    Math.random() * Math.PI * 2,
+    fallRate: 0.006 + Math.random() * 0.014,
+    size:     0.035 + Math.random() * 0.04,
+    drift:    (Math.random() - 0.5) * 0.018,
+  })), [s])
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.getElapsedTime()
+    for (let i = 0; i < COUNT; i++) {
+      const p = particles[i]
+      p.y -= p.fallRate
+      p.x += Math.sin(t * p.speed + p.phase) * 0.006 + p.drift
+      p.z += Math.cos(t * p.speed * 0.7 + p.phase) * 0.004
+      if (p.y < -0.2) {
+        p.y = 4.5 * s + Math.random() * s
+        p.x = (Math.random() - 0.5) * 8 * s
+        p.z = (Math.random() - 0.5) * 8 * s
+      }
+      dummy.position.set(p.x, p.y, p.z)
+      dummy.rotation.set(t * p.speed * 1.2, t * p.speed, t * p.speed * 0.8)
+      dummy.scale.setScalar(p.size * s)
+      dummy.updateMatrix()
+      ref.current.setMatrixAt(i, dummy.matrix)
+    }
+    ref.current.instanceMatrix.needsUpdate = true
+  })
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, COUNT]}>
+      <planeGeometry args={[1, 1.3]} />
+      <meshStandardMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.82} alphaTest={0.15} roughness={0.9} />
+    </instancedMesh>
+  )
 }
 
 // ─── Shared instanced helpers ─────────────────────────────────────────────────
@@ -970,6 +1016,33 @@ function ShrubCanopy({ s, c, stats, treeType }: {
   )
 }
 
+// ─── Mystical glow ────────────────────────────────────────────────────────────
+function MysticalGlow({ scale, canopyY, glowColor }: { scale: number; canopyY: number; glowColor: string }) {
+  const orbRef  = useRef<THREE.Mesh>(null!)
+  const lightRef = useRef<THREE.PointLight>(null!)
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    const pulse = 0.75 + Math.sin(t * 1.4) * 0.25
+    if (orbRef.current)  (orbRef.current.material as THREE.MeshBasicMaterial).opacity = 0.18 * pulse
+    if (lightRef.current) lightRef.current.intensity = 1.8 * pulse
+  })
+  return (
+    <group position={[0, canopyY + scale * 0.6, 0]}>
+      <pointLight ref={lightRef} color={glowColor} intensity={1.8} distance={scale * 9} decay={1.6} castShadow={false} />
+      {/* Soft orb core */}
+      <mesh ref={orbRef}>
+        <sphereGeometry args={[scale * 1.2, 14, 14]} />
+        <meshBasicMaterial color={glowColor} transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+      {/* Bright centre spark */}
+      <mesh>
+        <sphereGeometry args={[scale * 0.22, 10, 10]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.55} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
 // ─── Main Tree ────────────────────────────────────────────────────────────────
 interface TreeProps {
   stats:       TreeStats
@@ -977,9 +1050,10 @@ interface TreeProps {
   status:      string
   photoURL:    string | null
   treeType:    TreeType
+  glowMode?:   boolean
 }
 
-export function Tree({ stats, displayName, status, photoURL, treeType }: TreeProps) {
+export function Tree({ stats, displayName, status, photoURL, treeType, glowMode = false }: TreeProps) {
   const groupRef  = useRef<THREE.Group>(null!)
   const cfg       = TREE_CONFIGS[treeType] ?? TREE_CONFIGS.oak
   const season    = getCurrentSeason()
@@ -991,7 +1065,6 @@ export function Tree({ stats, displayName, status, photoURL, treeType }: TreePro
   const trunkH     = 3.2 * scale
   const trunkR     = 0.28 * scale
 
-  // Name sits above the highest point of the tree
   const treeTop = isFullTree
     ? (cfg.family === 'bamboo' ? scale * 4.2 : cfg.family === 'cactus' ? scale * 4.5 : cfg.family === 'shrub' ? scale * 1.6 : scale * 4.0)
     : (cfg.family === 'willow' ? trunkH + scale * 1.0 : cfg.family === 'acacia' ? trunkH + scale * 0.4 : trunkH + scale * 1.6 * 1.8)
@@ -1013,6 +1086,13 @@ export function Tree({ stats, displayName, status, photoURL, treeType }: TreePro
 
   const showTrunk = !isFullTree
   const showRoots = !isFullTree && cfg.family !== 'birch' && cfg.family !== 'willow'
+
+  // Pick glow color based on canopy
+  const glowColor = cfg.family === 'cactus' ? '#40ff80'
+    : cfg.family === 'palm' || cfg.family === 'bamboo' ? '#60ffa0'
+    : cfg.biome === 'tundra' ? '#80c8ff'
+    : cfg.biome === 'arid'   ? '#ffb040'
+    : '#4eff88'
 
   function renderCanopy() {
     const { family } = cfg
@@ -1073,6 +1153,12 @@ export function Tree({ stats, displayName, status, photoURL, treeType }: TreePro
       <group position={[0, canopyY, 0]}>
         {renderCanopy()}
       </group>
+
+      {/* Wind leaf particles — always present for realism */}
+      <WindLeaves color={sc[1]} s={scale} />
+
+      {/* Mystical glow overlay */}
+      {glowMode && <MysticalGlow scale={scale} canopyY={canopyY} glowColor={glowColor} />}
 
       <Billboard position={[0, nameY, 0]}>
         <Text fontSize={0.28 * Math.max(0.7, scale)} color="white"

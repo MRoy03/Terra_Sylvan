@@ -24,6 +24,7 @@ interface TreeSceneProps {
   bondLevel?:       number
   weatherOverride?: WeatherCondition
   showPhoto?:       boolean
+  glowMode?:        boolean
 }
 
 // ─── Weather HUD ──────────────────────────────────────────────────────────────
@@ -129,7 +130,7 @@ function WeatherHUD({ treeType }: { treeType: TreeType }) {
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
-export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal, bondLevel = 0, weatherOverride, showPhoto = true }: TreeSceneProps) {
+export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal, bondLevel = 0, weatherOverride, showPhoto = true, glowMode = false }: TreeSceneProps) {
   const biome = biomeType ?? TREE_BIOME_MAP[treeType] ?? 'temperate'
   const weather = useWeather()
   const condition = weatherOverride ?? weather.condition
@@ -166,7 +167,7 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
         <Suspense fallback={null}>
           <DynamicSky weatherCondition={condition} biomeType={biome} classicSky={!showPhoto} panoramaMode={showPhoto} />
           <Ground biomeType={biome} />
-          <Tree stats={stats} displayName={displayName} status={status} photoURL={photoURL} treeType={treeType} />
+          <Tree stats={stats} displayName={displayName} status={status} photoURL={photoURL} treeType={treeType} glowMode={glowMode} />
           {animal && animal !== 'none' && <AnimalCompanion type={animal} scale={stats.scale} bondLevel={bondLevel} />}
 
           <PerspectiveCamera makeDefault

@@ -16,6 +16,7 @@ interface TreeSceneProps {
   bondLevel?:       number
   weatherOverride?: WeatherCondition
   showPhoto?:       boolean
+  glowMode?:        boolean
 }
 
 export default function TreeScene(props: TreeSceneProps) {

@@ -414,6 +414,16 @@ body::after {
   display: inline-block;
 }
 
+/* ── Voice recording waveform bar ────────────────────────────────────────── */
+@keyframes voice-bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1.0);  }
+}
+.animate-voice-bar {
+  animation: voice-bar 0.7s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
 /* ── Bond level badge ────────────────────────────────────────────────────── */
 .bond-badge {
   display:       inline-flex;

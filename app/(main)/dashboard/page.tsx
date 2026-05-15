@@ -82,6 +82,7 @@ export default function DashboardPage() {
     () => (profile as any)?.mood as MoodType ?? null
   )
   const [showPhoto,    setShowPhoto]    = useState<boolean>(true)
+  const [glowMode,     setGlowMode]     = useState<boolean>(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('ts_realistic_bg')
@@ -186,6 +187,7 @@ export default function DashboardPage() {
         bondLevel={bond.level}
         weatherOverride={weatherOverride}
         showPhoto={showPhoto}
+        glowMode={glowMode}
       />
 
       {/* ── Navigation bar ── */}
@@ -232,6 +234,13 @@ export default function DashboardPage() {
             className={`p-1.5 rounded-lg text-xs transition-colors ${bioMode ? 'text-green-300 bg-green-900/30' : 'text-forest-700 hover:text-forest-400'}`}
           >
             <Sparkles size={15} className={bioMode ? 'text-green-300' : ''} />
+          </button>
+          <button
+            onClick={() => setGlowMode(v => !v)}
+            title={glowMode ? 'Tree glow: on' : 'Tree glow: off — lights up tree at night'}
+            className={`p-1.5 rounded-lg text-sm transition-colors ${glowMode ? 'text-emerald-300 bg-emerald-900/30' : 'text-forest-700 hover:text-forest-400'}`}
+          >
+            ✨
           </button>
           <Link href="/settings">
             <Button variant="ghost" size="sm" title="Settings">

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Message } from '@/types'
 import { formatTime } from '@/lib/utils'
-import { SmilePlus, Wind, Leaf, Reply } from 'lucide-react'
+import { SmilePlus, Wind, Leaf, Reply, Play, Pause } from 'lucide-react'
 import { toggleReaction, markMessageViewed } from '@/lib/firestore'
 import { useAuth } from '@/lib/auth-context'
 import { getStickerAnimation } from '@/lib/stickers'
@@ -24,6 +24,68 @@ function QuotedBlock({ replyTo, isMine }: { replyTo: NonNullable<Message['replyT
         : 'border-forest-400/50 bg-forest-800/40 text-forest-400'}`}>
       <p className="font-medium text-[10px] opacity-70 mb-0.5">↩ Reply</p>
       <p className="leading-snug opacity-80 line-clamp-2">{preview}</p>
+    </div>
+  )
+}
+
+function fmtDur(s: number) {
+  if (!isFinite(s) || isNaN(s)) return '0:00'
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60)
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
+function VoiceMessage({ src, isMine }: { src: string; isMine: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing,  setPlaying]  = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const bars = useMemo(() => Array.from({ length: 30 }, () => 0.2 + Math.random() * 0.8), [])
+
+  const toggle = () => {
+    const a = audioRef.current
+    if (!a) return
+    if (playing) { a.pause(); setPlaying(false) }
+    else { a.play().catch(() => {}); setPlaying(true) }
+  }
+
+  return (
+    <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl min-w-[200px] max-w-[280px]
+      ${isMine ? 'bg-forest-700 text-white rounded-br-sm' : 'bg-forest-900/80 text-forest-100 rounded-bl-sm border border-forest-800/40'}`}>
+      <button onClick={toggle}
+        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors
+          ${isMine ? 'bg-white/20 hover:bg-white/30' : 'bg-forest-700/60 hover:bg-forest-600/60'}`}>
+        {playing
+          ? <Pause size={14} className={isMine ? 'text-white' : 'text-forest-300'} />
+          : <Play  size={14} className={isMine ? 'text-white' : 'text-forest-300'} fill="currentColor" />}
+      </button>
+
+      <div className="flex-1 flex flex-col gap-1 min-w-0">
+        {/* Waveform */}
+        <div className="flex items-end gap-0.5 h-7">
+          {bars.map((h, i) => {
+            const filled = duration > 0 && (i / bars.length) <= progress
+            return (
+              <div key={i} className="flex-1 rounded-full transition-colors duration-150" style={{
+                height: `${h * 100}%`,
+                background: filled
+                  ? (isMine ? 'rgba(255,255,255,0.9)' : '#4ade80')
+                  : (isMine ? 'rgba(255,255,255,0.25)' : '#1e4a28'),
+              }} />
+            )
+          })}
+        </div>
+        <div className="flex justify-between items-center">
+          <span className={`text-[10px] tabular-nums ${isMine ? 'text-white/60' : 'text-forest-500'}`}>
+            {playing && duration > 0 ? fmtDur(progress * duration) : fmtDur(duration)}
+          </span>
+          <span className={`text-[9px] ${isMine ? 'text-white/40' : 'text-forest-700'}`}>Voice</span>
+        </div>
+      </div>
+
+      <audio ref={audioRef} src={src} preload="metadata"
+        onLoadedMetadata={() => { if (audioRef.current) setDuration(audioRef.current.duration) }}
+        onTimeUpdate={() => { if (audioRef.current) setProgress(audioRef.current.currentTime / audioRef.current.duration) }}
+        onEnded={() => { setPlaying(false); setProgress(0) }} />
     </div>
   )
 }
@@ -291,10 +353,34 @@ export function MessageBubble({ message, isMine, chatId, onReply }: MessageBubbl
   // Leaf message
   if ((message as any).leaf) return <LeafBubble message={message} isMine={isMine} />
 
+  const isVoice   = message.type === 'voice'
   const isSticker = message.type === 'sticker'
   const isEmoji   = message.type === 'emoji' && message.content.length <= 4
   const isImage   = message.type === 'image'
   const isVideo   = message.type === 'video'
+
+  // Voice message
+  if (isVoice && message.mediaURL) {
+    return (
+      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} px-3 py-0.5`}>
+        <div className="relative group">
+          <VoiceMessage src={message.mediaURL} isMine={isMine} />
+          <div className={`flex items-center gap-1 mt-0.5 ${isMine ? 'justify-end' : 'justify-start'}`}>
+            <span className="text-[10px] text-forest-600">{formatTime(message.timestamp)}</span>
+            {isMine && <MessageStatus status={message.status} hasReactions={hasReactions} isReplied={isReplied} />}
+          </div>
+          <ReactionRow reactions={reactions} myUid={myUid} onToggle={handleReact} />
+          <div className={`absolute ${isMine ? '-left-14' : '-right-14'} top-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5`}>
+            <button onClick={() => setPickerOpen(v => !v)} className="text-forest-600 hover:text-forest-300 p-1 relative">
+              <SmilePlus size={15} />
+              {pickerOpen && <ReactionPicker onPick={handleReact} onClose={() => setPickerOpen(false)} />}
+            </button>
+            <ReplyBtn />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Animated sticker / large emoji
   if (isSticker || isEmoji) {

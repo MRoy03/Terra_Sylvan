@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Phone, Images } from 'lucide-react'
+import { ArrowLeft, Phone, Images, Search, X } from 'lucide-react'
 import { useMessages } from '@/hooks/useMessages'
 import { useTyping } from '@/hooks/useTyping'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -29,9 +29,15 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
   const { messages, loading }                = useMessages(chatId)
   const { typers, notifyTyping, stopTyping } = useTyping(chatId, user?.uid ?? null)
   const { isOnline, lastSeen }               = useOnlineStatus(otherUser.uid)
-  const [showGallery, setShowGallery]        = useState(false)
-  const [replyingTo, setReplyingTo]          = useState<Message | null>(null)
+  const [showGallery,  setShowGallery]  = useState(false)
+  const [replyingTo,   setReplyingTo]   = useState<Message | null>(null)
+  const [searchOpen,   setSearchOpen]   = useState(false)
+  const [searchQuery,  setSearchQuery]  = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter(m => m.type === 'text' && m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -102,6 +108,13 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
         </div>
 
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => { setSearchOpen(v => !v); setSearchQuery('') }}
+            className={`p-2 rounded-xl transition-colors ${searchOpen ? 'text-white bg-forest-700/60' : 'text-forest-500 hover:text-white hover:bg-forest-800/50'}`}
+            title="Search messages"
+          >
+            <Search size={18} />
+          </button>
           {hasMedia && (
             <button
               onClick={() => setShowGallery(true)}
@@ -122,6 +135,26 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
         </div>
       </div>
 
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ background: 'var(--th-header, rgba(3,12,5,0.9))', borderColor: 'var(--th-border, rgb(30 58 34 / 0.5))' }}>
+          <Search size={14} className="text-forest-500 flex-shrink-0" />
+          <input
+            autoFocus
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search messages…"
+            className="flex-1 bg-transparent text-sm text-forest-100 placeholder-forest-600 focus:outline-none"
+          />
+          {searchQuery && (
+            <span className="text-[10px] text-forest-600">{filteredMessages.length} found</span>
+          )}
+          <button onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="text-forest-600 hover:text-forest-300">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto py-2" style={{ backgroundImage: 'radial-gradient(ellipse at center, #071a0e 0%, #030d05 100%)' }}>
         {loading ? (
@@ -138,7 +171,7 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
           </div>
         ) : (
           <>
-            {messages.map((msg) => (
+            {filteredMessages.map((msg) => (
               <MessageBubble
                 key={msg.id}
                 message={msg}
