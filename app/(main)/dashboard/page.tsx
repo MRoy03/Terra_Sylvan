@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Shield } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, ChevronUp, Sparkles, X, Shield, BookOpen } from 'lucide-react'
 import { forestToast } from '@/lib/forest-toast'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
@@ -18,7 +18,8 @@ import { StoriesBar } from '@/components/social/StoriesBar'
 import { ForestRadio } from '@/components/audio/ForestRadio'
 import { BadgeDisplay } from '@/components/profile/BadgeDisplay'
 import { computeBadges } from '@/lib/badges'
-import { getMediaByUser, getAdminSettings } from '@/lib/firestore'
+import { getMediaByUser, getAdminSettings, addJournalEntry } from '@/lib/firestore'
+import { JournalPanel } from '@/components/dashboard/JournalPanel'
 import { getMoodOption, type MoodType } from '@/lib/mood'
 import { computeBondXP, getBondLevel, BOND_GLOW } from '@/lib/companion-bond'
 import { DailyRitual }   from '@/components/dashboard/DailyRitual'
@@ -83,6 +84,8 @@ export default function DashboardPage() {
   )
   const [showPhoto,    setShowPhoto]    = useState<boolean>(true)
   const [glowMode,     setGlowMode]     = useState<boolean>(false)
+  const [showJournal,  setShowJournal]  = useState(false)
+  const [fallingLeaves, setFallingLeaves] = useState<{ id: number; x: number; delay: number; size: number }[]>([])
 
   useEffect(() => {
     const stored = localStorage.getItem('ts_realistic_bg')
@@ -121,6 +124,73 @@ export default function DashboardPage() {
     }
     sessionStorage.setItem(key, stats.stage)
   }, [profile])
+
+  // Leaf drop notification — show once per session when there are unread messages
+  useEffect(() => {
+    if (unreadCount > 0 && !sessionStorage.getItem('ts_leaf_shown')) {
+      sessionStorage.setItem('ts_leaf_shown', '1')
+      const leaves = Array.from({ length: Math.min(unreadCount + 2, 9) }, (_, i) => ({
+        id:    i,
+        x:     8 + Math.random() * 84,
+        delay: Math.random() * 1.8,
+        size:  1.1 + Math.random() * 1.0,
+      }))
+      setFallingLeaves(leaves)
+      setTimeout(() => setFallingLeaves([]), 5000)
+    }
+  }, [unreadCount])
+
+  // Journal milestone logging
+  useEffect(() => {
+    if (!profile || !user) return
+    const count = profile.messageCount
+    const MILESTONES = [1, 10, 50, 100, 500, 1000]
+    if (!MILESTONES.includes(count)) return
+    const key = `ts_jml_msg_${count}`
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+    addJournalEntry(user.uid, {
+      type:      'milestone',
+      emoji:     count === 1 ? '🌱' : count >= 1000 ? '🌳' : count >= 100 ? '🌲' : '🍃',
+      message:   count === 1
+        ? 'You sent your first leaf — your journey begins.'
+        : `${count} leaves sent into the forest. Your tree grows stronger.`,
+      timestamp: Date.now(),
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.messageCount])
+
+  useEffect(() => {
+    if (!profile || !user) return
+    if (profile.connectionCount < 1) return
+    const key = 'ts_jml_conn_1'
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+    addJournalEntry(user.uid, {
+      type: 'connection', emoji: '🌿',
+      message: 'Your first root reached out — a new connection made in the forest.',
+      timestamp: Date.now(),
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.connectionCount])
+
+  useEffect(() => {
+    if (!profile || !user) return
+    const stats = computeTreeStats(profile)
+    const key   = `ts_jml_stage_${stats.stage}`
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+    const STAGE_ENTRIES: Record<string, { emoji: string; message: string }> = {
+      sapling: { emoji: '🌿', message: 'Your seedling sprouted into a sapling. A new chapter begins.' },
+      young:   { emoji: '🌳', message: 'A young tree stands where a sapling once was.' },
+      mature:  { emoji: '🌲', message: 'Your tree has matured. Ancient wisdom begins to gather.' },
+      ancient: { emoji: '✨', message: 'Your tree has become ancient — a legend of the forest.' },
+    }
+    if (STAGE_ENTRIES[stats.stage]) {
+      addJournalEntry(user.uid, { type: 'stage', ...STAGE_ENTRIES[stats.stage], timestamp: Date.now() }).catch(() => {})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.messageCount])
 
   const openGallery = useCallback(async (type: 'image' | 'video') => {
     if (!user) return
@@ -241,6 +311,13 @@ export default function DashboardPage() {
             className={`p-1.5 rounded-lg text-sm transition-colors ${glowMode ? 'text-emerald-300 bg-emerald-900/30' : 'text-forest-700 hover:text-forest-400'}`}
           >
             ✨
+          </button>
+          <button
+            onClick={() => setShowJournal(true)}
+            title="Tree Journal"
+            className="p-1.5 rounded-lg text-forest-700 hover:text-forest-400 transition-colors"
+          >
+            <BookOpen size={15} />
           </button>
           <Link href="/settings">
             <Button variant="ghost" size="sm" title="Settings">
@@ -507,6 +584,32 @@ export default function DashboardPage() {
       {/* ── Memory Rings Modal ── */}
       {showRings && (
         <MemoryRings profile={profile as any} stats={stats} onClose={() => setShowRings(false)} />
+      )}
+
+      {/* ── Tree Journal Panel ── */}
+      {showJournal && user && (
+        <JournalPanel uid={user.uid} onClose={() => setShowJournal(false)} />
+      )}
+
+      {/* ── Leaf drop notification ── */}
+      {fallingLeaves.length > 0 && (
+        <div className="fixed inset-0 pointer-events-none z-[60] overflow-hidden">
+          {fallingLeaves.map(leaf => (
+            <button
+              key={leaf.id}
+              className="absolute top-0 animate-leaf-fall pointer-events-auto text-2xl cursor-pointer"
+              style={{ left: `${leaf.x}%`, animationDelay: `${leaf.delay}s`, fontSize: `${leaf.size}rem` }}
+              onClick={() => router.push('/chat')}
+            >
+              🍃
+            </button>
+          ))}
+          <div className="absolute top-[72px] left-1/2 -translate-x-1/2 pointer-events-none
+                          px-4 py-1.5 rounded-full bg-forest-900/95 border border-forest-700/40
+                          text-forest-300 text-xs backdrop-blur-md whitespace-nowrap shadow-lg">
+            {unreadCount} new leaf{unreadCount > 1 ? 's' : ''} waiting — tap to read
+          </div>
+        </div>
       )}
     </div>
   )

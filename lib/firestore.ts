@@ -265,3 +265,51 @@ export async function getAdminSettings(): Promise<AdminSettings> {
 export async function saveAdminSettings(settings: AdminSettings): Promise<void> {
   await setDoc(doc(db, 'adminSettings', 'siteConfig'), settings)
 }
+
+// ─── Bond Streak ──────────────────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().slice(0, 10) }
+function yesterdayStr() { return new Date(Date.now() - 86_400_000).toISOString().slice(0, 10) }
+
+export async function getChatStreak(chatId: string): Promise<number> {
+  const snap = await getDoc(doc(db, 'chats', chatId))
+  return snap.exists() ? (snap.data().streak ?? 0) : 0
+}
+
+export async function updateChatStreak(chatId: string): Promise<number> {
+  const ref  = doc(db, 'chats', chatId)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return 1
+  const data       = snap.data()
+  const lastDate   = data.streakLastDate ?? ''
+  const curStreak  = data.streak ?? 0
+  const today      = todayStr()
+  const yesterday  = yesterdayStr()
+  if (lastDate === today) return curStreak
+  const newStreak = lastDate === yesterday ? curStreak + 1 : 1
+  await updateDoc(ref, { streak: newStreak, streakLastDate: today })
+  return newStreak
+}
+
+// ─── Tree Journal ─────────────────────────────────────────────────────────────
+export interface JournalEntry {
+  id?:       string
+  type:      string
+  emoji:     string
+  message:   string
+  timestamp: number
+}
+
+export async function addJournalEntry(uid: string, entry: Omit<JournalEntry, 'id'>): Promise<void> {
+  await addDoc(collection(db, 'users', uid, 'journal'), entry)
+}
+
+export function subscribeJournal(uid: string, cb: (entries: JournalEntry[]) => void): () => void {
+  const q = query(
+    collection(db, 'users', uid, 'journal'),
+    orderBy('timestamp', 'desc'),
+    limit(40),
+  )
+  return onSnapshot(q, snap => {
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() }) as JournalEntry))
+  })
+}

@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Phone, Images, Search, X } from 'lucide-react'
+import { ArrowLeft, Phone, Images, Search, X, Stars } from 'lucide-react'
 import { useMessages } from '@/hooks/useMessages'
 import { useTyping } from '@/hooks/useTyping'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useAuth } from '@/lib/auth-context'
 import { useVoiceCall } from '@/context/VoiceCallContext'
-import { sendMessage, markAsReplied, getUserProfile } from '@/lib/firestore'
+import { sendMessage, markAsReplied, getUserProfile, updateChatStreak, getChatStreak } from '@/lib/firestore'
 import { playReceive, haptic } from '@/lib/sound-feedback'
+import { ConstellationView } from './ConstellationView'
 import { Avatar } from '@/components/ui/Avatar'
 import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
@@ -30,19 +31,26 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
   const { messages, loading }                = useMessages(chatId)
   const { typers, notifyTyping, stopTyping } = useTyping(chatId, user?.uid ?? null)
   const { isOnline, lastSeen }               = useOnlineStatus(otherUser.uid)
-  const [showGallery,  setShowGallery]  = useState(false)
-  const [replyingTo,   setReplyingTo]   = useState<Message | null>(null)
-  const [searchOpen,   setSearchOpen]   = useState(false)
-  const [searchQuery,  setSearchQuery]  = useState('')
-  const [userMood,     setUserMood]     = useState('')
+  const [showGallery,    setShowGallery]    = useState(false)
+  const [replyingTo,     setReplyingTo]     = useState<Message | null>(null)
+  const [searchOpen,     setSearchOpen]     = useState(false)
+  const [searchQuery,    setSearchQuery]    = useState('')
+  const [userMood,       setUserMood]       = useState('')
+  const [streak,         setStreak]         = useState(0)
+  const [constellation,  setConstellation]  = useState(false)
   const bottomRef    = useRef<HTMLDivElement>(null)
   const seenMsgIds   = useRef(new Set<string>())
+  const isNight      = (() => { const h = new Date().getHours(); return h >= 20 || h < 5 })()
 
-  // Load current user's mood once
+  // Load current user's mood + initial streak
   useEffect(() => {
     if (!user?.uid) return
     getUserProfile(user.uid).then(p => { if (p?.mood) setUserMood(p.mood) }).catch(() => {})
   }, [user?.uid])
+
+  useEffect(() => {
+    getChatStreak(chatId).then(setStreak).catch(() => {})
+  }, [chatId])
 
   // Play receive sound when new messages arrive from the other user
   useEffect(() => {
@@ -87,6 +95,11 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
         await markAsReplied(chatId, replyingTo.id)
         setReplyingTo(null)
       }
+      // Streak update (fire-and-forget)
+      updateChatStreak(chatId).then(s => {
+        setStreak(s)
+        if (s > 0 && s % 7 === 0) forestToast.info(`🔥 ${s}-day streak with ${otherUser.displayName}!`)
+      }).catch(() => {})
     } catch {
       forestToast.error('Failed to send message')
     }
@@ -135,6 +148,23 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Streak badge */}
+          {streak >= 2 && (
+            <div className="flex items-center gap-0.5 px-2 py-1 rounded-full bg-orange-950/50 border border-orange-700/30">
+              <span className="text-sm animate-streak-flame inline-block">🔥</span>
+              <span className="text-xs font-mono text-orange-400 tabular-nums">{streak}</span>
+            </div>
+          )}
+          {/* Constellation toggle (night only) */}
+          {isNight && (
+            <button
+              onClick={() => setConstellation(v => !v)}
+              className={`p-2 rounded-xl transition-colors ${constellation ? 'text-indigo-300 bg-indigo-900/30' : 'text-forest-500 hover:text-white hover:bg-forest-800/50'}`}
+              title="Constellation view"
+            >
+              <Stars size={18} />
+            </button>
+          )}
           <button
             onClick={() => { setSearchOpen(v => !v); setSearchQuery('') }}
             className={`p-2 rounded-xl transition-colors ${searchOpen ? 'text-white bg-forest-700/60' : 'text-forest-500 hover:text-white hover:bg-forest-800/50'}`}
@@ -183,35 +213,39 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-2" style={{ backgroundImage: chatBg }}>
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-4xl animate-float">🌿</div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
-            <span className="text-5xl">🌱</span>
-            <p className="text-forest-600 text-sm">No messages yet. Say hello!</p>
-            <p className="text-forest-700 text-xs">
-              {otherUser.displayName}&apos;s tree will grow a new leaf with your first message.
-            </p>
-          </div>
-        ) : (
-          <>
-            {filteredMessages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                isMine={msg.senderId === user?.uid}
-                chatId={chatId}
-                onReply={setReplyingTo}
-              />
-            ))}
-            {typers.length > 0 && <TypingIndicator />}
-            <div ref={bottomRef} />
-          </>
-        )}
-      </div>
+      {constellation && !loading && messages.length > 0 ? (
+        <ConstellationView messages={filteredMessages} myUid={user?.uid ?? ''} />
+      ) : (
+        <div className="flex-1 overflow-y-auto py-2" style={{ backgroundImage: chatBg }}>
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-4xl animate-float">🌿</div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
+              <span className="text-5xl">🌱</span>
+              <p className="text-forest-600 text-sm">No messages yet. Say hello!</p>
+              <p className="text-forest-700 text-xs">
+                {otherUser.displayName}&apos;s tree will grow a new leaf with your first message.
+              </p>
+            </div>
+          ) : (
+            <>
+              {filteredMessages.map((msg) => (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  isMine={msg.senderId === user?.uid}
+                  chatId={chatId}
+                  onReply={setReplyingTo}
+                />
+              ))}
+              {typers.length > 0 && <TypingIndicator />}
+              <div ref={bottomRef} />
+            </>
+          )}
+        </div>
+      )}
 
       <MessageInput
         onSend={handleSend}

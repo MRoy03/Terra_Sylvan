@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useCallback } from 'react'
 import { Message } from '@/types'
 import { formatTime } from '@/lib/utils'
 import { SmilePlus, Wind, Leaf, Reply, Play, Pause } from 'lucide-react'
@@ -319,15 +319,20 @@ function LeafBubble({ message, isMine }: { message: Message; isMine: boolean }) 
 export function MessageBubble({ message, isMine, chatId, onReply }: MessageBubbleProps) {
   const { user }     = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [floaters,   setFloaters]   = useState<{ id: number; emoji: string }[]>([])
+  const floaterKey   = useRef(0)
   const myUid      = user?.uid ?? ''
   const reactions  = message.reactions ?? {}
   const hasReactions = Object.values(reactions).some(u => u.length > 0)
   const isReplied  = !!message.isReplied
 
-  async function handleReact(emoji: string) {
+  const handleReact = useCallback(async (emoji: string) => {
     if (!myUid) return
+    const id = ++floaterKey.current
+    setFloaters(prev => [...prev, { id, emoji }])
+    setTimeout(() => setFloaters(prev => prev.filter(f => f.id !== id)), 1100)
     await toggleReaction(chatId, message.id, emoji, myUid)
-  }
+  }, [myUid, chatId, message.id])
 
   function ReplyBtn() {
     if (!onReply) return null
@@ -339,6 +344,21 @@ export function MessageBubble({ message, isMine, chatId, onReply }: MessageBubbl
       >
         <Reply size={14} />
       </button>
+    )
+  }
+
+  function FloaterLayer() {
+    if (floaters.length === 0) return null
+    return (
+      <>
+        {floaters.map(f => (
+          <div key={f.id}
+            className="absolute pointer-events-none animate-float-react text-2xl z-50"
+            style={{ bottom: '100%', left: '50%' }}>
+            {f.emoji}
+          </div>
+        ))}
+      </>
     )
   }
 
@@ -364,6 +384,7 @@ export function MessageBubble({ message, isMine, chatId, onReply }: MessageBubbl
     return (
       <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} px-3 py-0.5`}>
         <div className="relative group">
+          <FloaterLayer />
           <VoiceMessage src={message.mediaURL} isMine={isMine} />
           <div className={`flex items-center gap-1 mt-0.5 ${isMine ? 'justify-end' : 'justify-start'}`}>
             <span className="text-[10px] text-forest-600">{formatTime(message.timestamp)}</span>
@@ -444,6 +465,7 @@ export function MessageBubble({ message, isMine, chatId, onReply }: MessageBubbl
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} px-3 py-0.5`}>
       <div className="relative group max-w-[72%]">
+        <FloaterLayer />
         <div className={`px-3.5 py-2 rounded-2xl text-sm leading-relaxed
           ${isMine
             ? 'bg-forest-700 text-white rounded-br-sm'
