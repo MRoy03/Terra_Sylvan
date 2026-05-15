@@ -5,6 +5,7 @@ import { Smile, Paperclip, Send, X, Loader2, Leaf, Wind, Reply, Mic, MicOff, Squ
 import { EmojiPanel } from './EmojiPanel'
 import { uploadMedia, uploadAudio, isCloudinaryConfigured } from '@/lib/cloudinary'
 import { forestToast } from '@/lib/forest-toast'
+import { playSend, playWhisper, playLeaf, playVoiceSend, haptic } from '@/lib/sound-feedback'
 import type { Message } from '@/types'
 
 type InputMode = 'text' | 'whisper' | 'leaf' | 'viewonce'
@@ -61,12 +62,14 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled, replyin
           try {
             const url = await uploadAudio(blob)
             await onSend('[Voice message]', 'voice', url)
+            playVoiceSend(); haptic([8, 50, 8])
           } catch { forestToast.error('Voice upload failed') }
           finally { setUploadingVoice(false) }
         } else {
           // Fallback: store as object URL (ephemeral — works for local dev)
           const url = URL.createObjectURL(blob)
           await onSend('[Voice message]', 'voice', url)
+          playVoiceSend(); haptic([8, 50, 8])
         }
       }
       rec.start(100)
@@ -118,6 +121,9 @@ export function MessageInput({ onSend, onTyping, onStopTyping, disabled, replyin
       setInputMode('text')
       onStopTyping()
       inputRef.current?.focus()
+      if (inputMode === 'whisper')      { playWhisper(); haptic(6) }
+      else if (inputMode === 'leaf')    { playLeaf();    haptic(6) }
+      else                              { playSend();    haptic(8) }
     } finally {
       setSending(false)
     }

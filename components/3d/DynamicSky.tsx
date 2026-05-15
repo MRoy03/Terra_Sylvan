@@ -286,6 +286,92 @@ function Snow({ heavy }: { heavy: boolean }) {
   )
 }
 
+// ─── Milky Way ────────────────────────────────────────────────────────────────
+function MilkyWay() {
+  const tex = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1024; canvas.height = 300
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, 1024, 300)
+    // Galactic band — soft glowing strip
+    const grad = ctx.createLinearGradient(0, 0, 0, 300)
+    grad.addColorStop(0,    'rgba(80,60,120,0)')
+    grad.addColorStop(0.25, 'rgba(110,80,170,0.12)')
+    grad.addColorStop(0.5,  'rgba(190,170,255,0.22)')
+    grad.addColorStop(0.75, 'rgba(110,80,170,0.12)')
+    grad.addColorStop(1,    'rgba(80,60,120,0)')
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 1024, 300)
+    // Dense star field within the band
+    for (let i = 0; i < 3000; i++) {
+      const x   = Math.random() * 1024
+      const mid = 150 + (Math.random() - 0.5) * 100
+      const y   = mid + (Math.random() - 0.5) * 80
+      const r   = Math.random() * 1.1
+      ctx.fillStyle = `rgba(220,210,255,${0.08 + Math.random() * 0.55})`
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill()
+    }
+    // Bright core nebula patches
+    const patches = [{x:300,y:150,rx:90,ry:30},{x:512,y:145,rx:120,ry:35},{x:720,y:155,rx:80,ry:28}]
+    patches.forEach(p => {
+      const pg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.rx)
+      pg.addColorStop(0, 'rgba(255,240,200,0.10)'); pg.addColorStop(1, 'rgba(150,100,200,0)')
+      ctx.fillStyle = pg; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI*2); ctx.fill()
+    })
+    const t = new THREE.CanvasTexture(canvas)
+    return t
+  }, [])
+
+  return (
+    <mesh position={[0, 28, -145]} rotation={[0.35, 0, 0.55]}>
+      <planeGeometry args={[450, 90]} />
+      <meshBasicMaterial map={tex} transparent depthWrite={false} side={THREE.DoubleSide} />
+    </mesh>
+  )
+}
+
+// ─── Shooting Stars ────────────────────────────────────────────────────────────
+function ShootingStars() {
+  const ref    = useRef<THREE.Group>(null!)
+  const trails = useMemo(() => Array.from({ length: 5 }, (_, i) => ({
+    sx:     (Math.random() - 0.5) * 180,
+    sy:     55 + Math.random() * 35,
+    sz:     -105 - Math.random() * 30,
+    dx:     -0.7 - Math.random() * 0.9,
+    dy:     -0.35 - Math.random() * 0.25,
+    period: 9 + Math.random() * 13,
+    offset: i * 4.5 + Math.random() * 5,
+    len:    9 + Math.random() * 14,
+  })), [])
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.getElapsedTime()
+    ref.current.children.forEach((child, i) => {
+      const s     = trails[i]
+      const cycle = ((t + s.offset) % s.period) / s.period
+      const vis   = cycle < 0.10
+      child.visible = vis
+      if (vis) {
+        const p  = cycle / 0.10
+        child.position.set(s.sx + s.dx * p * 55, s.sy + s.dy * p * 55, s.sz)
+        child.rotation.z = Math.atan2(s.dy, s.dx)
+        ;(child as THREE.Mesh).material && ((child as THREE.Mesh).material as THREE.MeshBasicMaterial).setValues({ opacity: 0.9 - p * 0.5 })
+      }
+    })
+  })
+
+  return (
+    <group ref={ref}>
+      {trails.map((s, i) => (
+        <mesh key={i} position={[s.sx, s.sy, s.sz]}>
+          <planeGeometry args={[s.len, 0.25]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.9} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 // ─── Constellations ───────────────────────────────────────────────────────────
 const ORION: { stars: [number,number,number][]; lines: [number,number][] } = {
   stars: [[-3,6,0],[3,6,0],[-1.5,4,0],[0,4,0],[1.5,4,0],[-3,2,0],[3,2,0]],
@@ -421,6 +507,8 @@ export function DynamicSky({ weatherCondition = 'clear', biomeType = 'temperate'
           {isRainy && <Rain heavy={weatherCondition === 'heavy_rain' || weatherCondition === 'storm'} />}
           {isSnowy && <Snow heavy={weatherCondition === 'heavy_snow'} />}
           {isNight && !isRainy && !isSnowy && <Fireflies />}
+          {isNight && <MilkyWay />}
+          {isNight && !isRainy && !isSnowy && <ShootingStars />}
         </>
       )}
 

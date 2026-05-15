@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera, Loader } from '@react-three/drei'
 import { Tree } from './Tree'
 import { DynamicSky } from './DynamicSky'
@@ -25,6 +25,21 @@ interface TreeSceneProps {
   weatherOverride?: WeatherCondition
   showPhoto?:       boolean
   glowMode?:        boolean
+}
+
+// ─── Camera → Panorama Sync ───────────────────────────────────────────────────
+// Reads camera azimuth every frame and imperatively updates background-position-x
+// on the outer wrapper div — no React state, zero re-renders.
+function CameraSync({ bgRef }: { bgRef: React.RefObject<HTMLDivElement | null> }) {
+  const { camera } = useThree()
+  useFrame(() => {
+    const el = bgRef.current
+    if (!el || !el.style.backgroundImage) return
+    const az = Math.atan2(camera.position.x, camera.position.z) // -π … π
+    const t  = ((az / (Math.PI * 2)) + 1) % 1                   // 0 … 1
+    el.style.backgroundPositionX = `${t * 100}%`
+  })
+  return null
 }
 
 // ─── Weather HUD ──────────────────────────────────────────────────────────────
@@ -131,6 +146,7 @@ function WeatherHUD({ treeType }: { treeType: TreeType }) {
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 export default function TreeSceneCanvas({ stats, displayName, status, photoURL, treeType, biomeType, animal, bondLevel = 0, weatherOverride, showPhoto = true, glowMode = false }: TreeSceneProps) {
+  const bgRef  = useRef<HTMLDivElement>(null)
   const biome = biomeType ?? TREE_BIOME_MAP[treeType] ?? 'temperate'
   const weather = useWeather()
   const condition = weatherOverride ?? weather.condition
@@ -143,12 +159,14 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
 
   return (
     <div
+      ref={bgRef}
       className="w-full h-full relative overflow-hidden"
       style={{
-        backgroundImage: showPhoto && panoramaUrl ? `url(${panoramaUrl})` : undefined,
-        backgroundSize:     'cover',
-        backgroundPosition: 'center 35%',
-        backgroundColor:    '#060f07',
+        backgroundImage:     showPhoto && panoramaUrl ? `url(${panoramaUrl})` : undefined,
+        backgroundSize:      'cover',
+        backgroundPositionX: '50%',
+        backgroundPositionY: '35%',
+        backgroundColor:     '#060f07',
       }}
     >
       {/* Time-of-day colour grade over the photo */}
@@ -180,6 +198,7 @@ export default function TreeSceneCanvas({ stats, displayName, status, photoURL, 
             autoRotate autoRotateSpeed={0.4} enableDamping dampingFactor={0.08} />
 
           <fog attach="fog" args={[fogColor, 45, 130]} />
+          {showPhoto && <CameraSync bgRef={bgRef} />}
         </Suspense>
       </Canvas>
 

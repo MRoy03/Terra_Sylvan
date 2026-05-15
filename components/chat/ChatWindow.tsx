@@ -7,7 +7,8 @@ import { useTyping } from '@/hooks/useTyping'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useAuth } from '@/lib/auth-context'
 import { useVoiceCall } from '@/context/VoiceCallContext'
-import { sendMessage, markAsReplied } from '@/lib/firestore'
+import { sendMessage, markAsReplied, getUserProfile } from '@/lib/firestore'
+import { playReceive, haptic } from '@/lib/sound-feedback'
 import { Avatar } from '@/components/ui/Avatar'
 import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
@@ -33,7 +34,33 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
   const [replyingTo,   setReplyingTo]   = useState<Message | null>(null)
   const [searchOpen,   setSearchOpen]   = useState(false)
   const [searchQuery,  setSearchQuery]  = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [userMood,     setUserMood]     = useState('')
+  const bottomRef    = useRef<HTMLDivElement>(null)
+  const seenMsgIds   = useRef(new Set<string>())
+
+  // Load current user's mood once
+  useEffect(() => {
+    if (!user?.uid) return
+    getUserProfile(user.uid).then(p => { if (p?.mood) setUserMood(p.mood) }).catch(() => {})
+  }, [user?.uid])
+
+  // Play receive sound when new messages arrive from the other user
+  useEffect(() => {
+    if (messages.length === 0) { seenMsgIds.current.clear(); return }
+    const hasSeenAny = seenMsgIds.current.size > 0
+    const newFromOther = messages.filter(m => !seenMsgIds.current.has(m.id) && m.senderId !== user?.uid)
+    if (hasSeenAny && newFromOther.length > 0) { playReceive(); haptic([4, 20, 4]) }
+    messages.forEach(m => seenMsgIds.current.add(m.id))
+  }, [messages, user?.uid])
+
+  const MOOD_BG: Record<string, string> = {
+    sunny:   'radial-gradient(ellipse at center, #2a1500 0%, #180d00 50%, #030d05 100%)',
+    breezy:  'radial-gradient(ellipse at center, #001828 0%, #001020 50%, #030d05 100%)',
+    rainy:   'radial-gradient(ellipse at center, #080826 0%, #040418 50%, #030d05 100%)',
+    stormy:  'radial-gradient(ellipse at center, #160026 0%, #0a0016 50%, #030d05 100%)',
+    radiant: 'radial-gradient(ellipse at center, #001c08 0%, #001408 50%, #030d05 100%)',
+  }
+  const chatBg = MOOD_BG[userMood] ?? 'radial-gradient(ellipse at center, #071a0e 0%, #030d05 100%)'
 
   const filteredMessages = searchQuery.trim()
     ? messages.filter(m => m.type === 'text' && m.content.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -156,7 +183,7 @@ export function ChatWindow({ chatId, otherUser, onBack }: ChatWindowProps) {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-2" style={{ backgroundImage: 'radial-gradient(ellipse at center, #071a0e 0%, #030d05 100%)' }}>
+      <div className="flex-1 overflow-y-auto py-2" style={{ backgroundImage: chatBg }}>
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-4xl animate-float">🌿</div>

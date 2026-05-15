@@ -75,15 +75,15 @@ function TerrainBumps({ color, midColor }: { color: string; midColor: string }) 
   return (
     <group>
       {bumps.map((b, i) => (
-        <mesh key={i} position={[b.x, b.ry / 2, b.z]} castShadow receiveShadow
-          rotation={[0, (i / 18) * Math.PI * 2, 0]}>
+        <mesh key={i} position={[b.x, b.ry, b.z]} castShadow receiveShadow
+          rotation={[0, (i / 18) * Math.PI * 2, 0]}
+          scale={[b.rx, b.ry, b.rz]}>
           <sphereGeometry args={[1, 8, 6]} />
           <meshStandardMaterial
             color={i % 3 === 0 ? midColor : color}
             roughness={0.92}
             metalness={0}
           />
-          <group scale={[b.rx, b.ry, b.rz]} />
         </mesh>
       ))}
     </group>

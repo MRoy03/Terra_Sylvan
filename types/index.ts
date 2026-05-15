@@ -52,6 +52,7 @@ export interface UserProfile {
   videoCount: number
   isOnline?: boolean
   lastSeen?: number
+  mood?: string
 }
 
 // ─── Tree Visual Stats ────────────────────────────────────────────────────────
