@@ -3,6 +3,8 @@ import { Inter, Cormorant_Garamond } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/lib/auth-context'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import { NotificationInit } from '@/components/notifications/NotificationInit'
+import { PWAInstallPrompt }  from '@/components/ui/PWAInstallPrompt'
 import './globals.css'
 
 const inter     = Inter({ subsets: ['latin'], variable: '--font-inter',     display: 'swap' })
@@ -75,6 +77,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
             }}
           />
+          <NotificationInit />
+          <PWAInstallPrompt />
         </AuthProvider>
       </body>
     </html>

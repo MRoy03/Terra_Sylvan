@@ -313,3 +313,8 @@ export function subscribeJournal(uid: string, cb: (entries: JournalEntry[]) => v
     cb(snap.docs.map(d => ({ id: d.id, ...d.data() }) as JournalEntry))
   })
 }
+
+// ─── FCM Tokens ───────────────────────────────────────────────────────────────
+export async function saveFcmToken(uid: string, token: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { fcmToken: token, fcmUpdatedAt: Date.now() })
+}

@@ -1,41 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Outer bark ring -->
-  <circle cx="32" cy="32" r="31" fill="#0b1e0d"/>
-  <circle cx="32" cy="32" r="31" fill="none" stroke="#1a3d10" stroke-width="1.5"/>
-
-  <!-- Growth ring 4 (outermost) -->
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#1e4a14" stroke-width="2"/>
-
-  <!-- Growth ring 3 -->
-  <circle cx="32" cy="32" r="20" fill="none" stroke="#2a6320" stroke-width="1.8"/>
-
-  <!-- Growth ring 2 -->
-  <circle cx="32" cy="32" r="14" fill="none" stroke="#3a8030" stroke-width="1.5"/>
-
-  <!-- Growth ring 1 (inner) -->
-  <circle cx="32" cy="32" r="8.5" fill="none" stroke="#52a840" stroke-width="1.2"/>
-
-  <!-- Heartwood fill -->
-  <circle cx="32" cy="32" r="7" fill="#7c4b1a"/>
-  <circle cx="32" cy="32" r="5" fill="#9c6228"/>
-  <circle cx="32" cy="32" r="3" fill="#b87a35"/>
-  <!-- Pith centre -->
-  <circle cx="32" cy="32" r="1.5" fill="#d4a055"/>
-
-  <!-- Radial grain lines (medullary rays) -->
-  <g stroke="#1e4a14" stroke-width="0.6" opacity="0.5">
-    <line x1="32" y1="6"  x2="32" y2="22"/>
-    <line x1="32" y1="42" x2="32" y2="58"/>
-    <line x1="6"  y1="32" x2="22" y2="32"/>
-    <line x1="42" y1="32" x2="58" y2="32"/>
-    <line x1="12.9" y1="12.9" x2="22.6" y2="22.6"/>
-    <line x1="41.4" y1="41.4" x2="51.1" y2="51.1"/>
-    <line x1="51.1" y1="12.9" x2="41.4" y2="22.6"/>
-    <line x1="22.6" y1="41.4" x2="12.9" y2="51.1"/>
-  </g>
-
-  <!-- Tiny leaf sprout at top — the "T" of Terra -->
-  <path d="M32 5 C29 2 25 3 25 7 C25 10 29 11 32 9 C35 11 39 10 39 7 C39 3 35 2 32 5Z"
-        fill="#4dbb6f" opacity="0.9"/>
-  <line x1="32" y1="5" x2="32" y2="9" stroke="#2d7a45" stroke-width="0.8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#030d05"/>
+  <!-- Trunk -->
+  <rect x="28" y="42" width="8" height="17" rx="2" fill="#7c4b1a"/>
+  <!-- Root spread -->
+  <ellipse cx="32" cy="58" rx="10" ry="2.5" fill="#5c3410"/>
+  <!-- Bottom canopy layer -->
+  <ellipse cx="32" cy="40" rx="20" ry="11" fill="#0d3b08"/>
+  <!-- Mid-low canopy -->
+  <ellipse cx="32" cy="32" rx="17" ry="11" fill="#124f0c"/>
+  <!-- Mid canopy -->
+  <ellipse cx="32" cy="24" rx="14" ry="10" fill="#186614"/>
+  <!-- Upper canopy -->
+  <ellipse cx="32" cy="17" rx="11" ry="9" fill="#1f801a"/>
+  <!-- Crown -->
+  <ellipse cx="32" cy="10" rx="8" ry="7" fill="#289920"/>
+  <!-- Top tip -->
+  <ellipse cx="32" cy="4.5" rx="4" ry="4" fill="#32b828"/>
+  <!-- Sunlight glint on canopy -->
+  <ellipse cx="26" cy="9" rx="2.5" ry="1.8" fill="#58e040" opacity="0.55"/>
+  <ellipse cx="22" cy="20" rx="2" ry="1.3" fill="#4acc34" opacity="0.35"/>
 </svg>
